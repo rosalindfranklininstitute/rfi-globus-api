@@ -1,0 +1,6 @@
+setuptools==57.5.0
+globus-cli==3.33.1
+globus-sdk==3.53.0
+PyYAML==6.0.2
+click==8.1.8
+numpy==1.24.4
