@@ -8,6 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+src/GlobusAPI/_version.py
 build/
 develop-eggs/
 dist/
@@ -128,7 +129,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 /.idea/
-scripts/**
 screenshot
 tokens.json
 suc_trans

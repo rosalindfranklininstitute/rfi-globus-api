@@ -14,8 +14,10 @@
    limitations under the License.
 """
 
+import typing
+
 from globus_sdk import ClientCredentialsAuthorizer, ConfidentialAppAuthClient
-from globus_sdk._types import ScopeCollectionType
+from globus_sdk.scopes import Scope
 from globus_sdk.authorizers import GlobusAuthorizer
 
 from ..logging.logging import get_logger
@@ -24,7 +26,7 @@ logger = get_logger()
 
 
 def get_client_credentials_authorizer(
-    client_id: str, client_secret: str, scopes: ScopeCollectionType
+    client_id: str, client_secret: str, scopes: typing.Union[str,Scope,typing.Iterable[typing.Union[str,Scope]]]
 ) -> GlobusAuthorizer:
     """Authenticate using Client credentials only. To use this method your client needs to be set up as an
      Administrator on your guest collection.
@@ -32,8 +34,10 @@ def get_client_credentials_authorizer(
     Args:
         client_id (str, required): the uid of your Client.
         client_secret (str, required): the client secret.
-        scopes (ScopeCollectionType, required): the scope must include the collection ID of the collection your
-                                                administrator is on.
+        scopes (typing.Union[str,Scope,typing.Iterable[typing.Union[str,Scope]]], required): the scope must include the
+                                                                                             collection ID of the
+                                                                                             collection your
+                                                                                             administrator is on.
 
     Returns:
         An authorizer object (GlobusAuthorizer)

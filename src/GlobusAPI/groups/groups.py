@@ -1207,7 +1207,7 @@ def get_group_from_name(
             if group_name == group["name"]:
                 return group
 
-        logger.error(f"Group :{group_name} does not exists")
+        logger.error(f"Group :{group_name} does not exist")
 
     except Exception as ex:
         logger.exception("Failed to get group list...", exc_info=ex)

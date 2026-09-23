@@ -1,4 +1,3 @@
-.git
 .gitignore
 .dockerignore
 .pytest_cache
@@ -6,11 +5,9 @@ Dockerfile**
 
 configure_echo
 screenshot
-scripts
 kubernetes
 data
 tokens.json
-README.md
 
 **/*.egg-info
 .pytest_cache

@@ -14,4 +14,4 @@
    limitations under the License.
 """
 
-from . import acl_rules, transfer_client, transfer_methods
+from . import acl_rules, transfer_client, transfer_methods, url_methods

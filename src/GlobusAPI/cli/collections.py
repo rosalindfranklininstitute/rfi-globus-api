@@ -17,6 +17,7 @@
 import logging
 
 import click
+from globus_sdk._missing import MISSING
 
 from ..collections.guest import (
     create_guest_collection,
@@ -52,11 +53,11 @@ LOGGING_LEVELS = [logging.WARNING, logging.INFO, logging.DEBUG]
     "--base-path", default="/", type=str, help="Globus base path of guest collection."
 )
 @click.option(
-    "--wait-period",
+    "--check-interval",
     default="00:00:30",
     type=str,
-    help="""Globus wait period after a collection is created to ensure that command's execution has been concluded in
-            the Globus servers.""",
+    help="""Globus collection status check time interval. Accepted formats "ss", "mm:ss", "hh:mm:ss".
+            Default is "00:00:30" aka 30 seconds.""",
 )
 @click.option(
     "--print-parameter",
@@ -103,7 +104,7 @@ def createguestcollection(ctx, **kargs):
         endpoint_id=ctx.obj["endpoint_id"],
         mapped_collection_id=ctx.obj["mapped_collection_id"],
         base_path=ctx.obj["base_path"],
-        wait_period=ctx.obj["wait_period"],
+        status_change_check_interval=ctx.obj["check_interval"],
         json=ctx.obj["json"],
         yaml=ctx.obj["yaml"],
     )
@@ -134,11 +135,11 @@ def createguestcollection(ctx, **kargs):
     "--collection-id", default=None, type=str, help="Globus guest collection id."
 )
 @click.option(
-    "--wait-period",
+    "--check-interval",
     default="00:00:30",
     type=str,
-    help="""Globus wait period after a collection is deleted to ensure that command's execution has been concluded in
-            the Globus servers.""",
+    help="""Globus collection status check time interval. Accepted formats "ss", "mm:ss", "hh:mm:ss".
+            Default is "00:00:30" aka 30 seconds.""",
 )
 @click.option(
     "--print-parameter",
@@ -185,7 +186,7 @@ def deleteguestcollection(ctx, **kargs):
         mapped_collection_id=ctx.obj["mapped_collection_id"],
         collection_name=ctx.obj["collection_name"],
         collection_id=ctx.obj["collection_id"],
-        wait_period=ctx.obj["wait_period"],
+        status_change_check_interval=ctx.obj["check_interval"],
         json=ctx.obj["json"],
         yaml=ctx.obj["yaml"],
     )
@@ -228,11 +229,11 @@ def deleteguestcollection(ctx, **kargs):
     help="Globus Make the guest collection public or not.",
 )
 @click.option(
-    "--wait-period",
+    "--check-interval",
     default="00:00:30",
     type=str,
-    help="""Globus wait period after a collection is deleted to ensure that command's execution has been concluded in
-            the Globus servers.""",
+    help="""Globus collection status check time interval. Accepted formats "ss", "mm:ss", "hh:mm:ss".
+            Default is "00:00:30" aka 30 seconds.""",
 )
 @click.option(
     "--print-parameter",
@@ -284,7 +285,7 @@ def updateguestcollection(ctx, **kargs):
         collection_id=ctx.obj["collection_id"],
         new_collection_name=ctx.obj["new_collection_name"],
         public=ctx.obj["public"],
-        wait_period=ctx.obj["wait_period"],
+        status_change_check_interval=ctx.obj["check_interval"],
         json=ctx.obj["json"],
         yaml=ctx.obj["yaml"],
     )
@@ -362,6 +363,8 @@ def getguestcollection(ctx, **kargs):
     if ctx.obj["filter"] is not None:
         if len(ctx.obj["filter"].split(" ")) > 1:
             ctx.obj["filter"] = iter(ctx.obj["filter"].split(" "))
+    else:
+        ctx.obj["filter"] = MISSING
 
     gcs_response = get_guest_collection(
         confidential_client_id=ctx.obj["confidential_client_id"],
@@ -450,10 +453,14 @@ def guestcollectionlist(ctx, **kargs):
     if ctx.obj["filter"] is not None:
         if len(ctx.obj["filter"].split(" ")) > 1:
             ctx.obj["filter"] = iter(ctx.obj["filter"].split(" "))
+    else:
+        ctx.obj["filter"] = MISSING
 
     if ctx.obj["include"] is not None:
         if len(ctx.obj["include"].split(" ")) > 1:
             ctx.obj["include"] = iter(ctx.obj["include"].split(" "))
+    else:
+        ctx.obj["include"] = MISSING
 
     guest_collection_list(
         confidential_client_id=ctx.obj["confidential_client_id"],

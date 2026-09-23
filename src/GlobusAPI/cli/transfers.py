@@ -17,6 +17,7 @@
 import logging
 
 import click
+from globus_sdk._missing import MISSING
 
 from ..logging.logging import dump_with_auto_obfuscation, get_logger
 from ..transfers.acl_rules import (
@@ -28,15 +29,18 @@ from ..transfers.acl_rules import (
 )
 from ..transfers.transfer_methods import (
     cancel_tasks,
+    complete_delete,
     complete_transfer,
     get_monitored_collection,
     get_task,
     monitored_collection_list,
+    submit_delete,
     submit_transfer,
     task_event_list,
     task_list,
     task_successful_transfers,
 )
+from ..transfers.url_methods import get_url
 
 logger = get_logger(stdout=True)
 LOGGING_LEVELS = [logging.WARNING, logging.INFO, logging.DEBUG]
@@ -190,10 +194,23 @@ def tasklist(ctx, **kargs):
     if ctx.obj["filter_status"] is not None:
         if len(ctx.obj["filter_status"].split(" ")) > 1:
             ctx.obj["filter_status"] = iter(ctx.obj["filter_status"].split(" "))
+    else:
+        ctx.obj["filter_status"] = MISSING
 
     if ctx.obj["filter_task_id"] is not None:
         if len(ctx.obj["filter_task_id"].split(" ")) > 1:
             ctx.obj["filter_task_id"] = iter(ctx.obj["filter_task_id"].split(" "))
+    else:
+        ctx.obj["filter_task_id"] = MISSING
+
+    if ctx.obj["filter_owner_uuid"] is None:
+        ctx.obj["filter_owner_uuid"] = MISSING
+
+    if ctx.obj["filter_owner_identity"] is None:
+        ctx.obj["filter_owner_identity"] = MISSING
+
+    if ctx.obj["filter_collection_use"] is None:
+        ctx.obj["filter_collection_use"] = MISSING
 
     if ctx.obj["filter_completion_time"] is not None:
         try:
@@ -207,12 +224,22 @@ def tasklist(ctx, **kargs):
             ctx.obj["filter_completion_time"] = tuple(
                 ctx.obj["filter_completion_time"].split(" ")
             )
+    else:
+        ctx.obj["filter_completion_time"] = MISSING
 
     if ctx.obj["filter_is_paused"] is not None:
         ctx.obj["filter_is_paused"] = (
             ctx.obj["filter_is_paused"] == "True"
             or ctx.obj["filter_is_paused"] == "true"
         )
+    else:
+        ctx.obj["filter_is_paused"] = MISSING
+
+    if ctx.obj["filter_min_faults"] is None:
+        ctx.obj["filter_min_faults"] = MISSING
+
+    if ctx.obj["filter_local_user"] is None:
+        ctx.obj["filter_local_user"] = MISSING
 
     task_list(
         confidential_client_id=ctx.obj["confidential_client_id"],
@@ -279,6 +306,8 @@ def taskeventlist(ctx, **kargs):
                 """A value of False for the --filter-is-error option, (returning only non-errors) is not
                    supported. Events will not be filtered."""
             )
+    else:
+        ctx.obj["filter_is_error"] = MISSING
 
     task_event_list(
         confidential_client_id=ctx.obj["confidential_client_id"],
@@ -305,7 +334,14 @@ def taskeventlist(ctx, **kargs):
     "--item-list-filename",
     required=True,
     type=str,
-    help="Globus API Path to a JSON or YAML file with the list of transfers to be submitted.",
+    help="""Globus API Path to a JSON or YAML file with the list of items (files or directories) to be submitted for
+            transfer.""",
+)
+@click.option(
+    "--filter-rule-list-filename",
+    type=str,
+    help="""Globus API Path to a JSON or YAML file with the list of transfer filter rules that will be used for the item
+            transfer.""",
 )
 @click.option(
     "--source-collection-id",
@@ -334,6 +370,51 @@ def taskeventlist(ctx, **kargs):
 @click.option("--label", default=None, type=str, help="Globus API Transfer label.")
 @click.option(
     "--sync-level", default=None, type=int, help="Globus API Transfer sync level."
+)
+@click.option(
+    "--verify-checksum",
+    default=None,
+    type=str,
+    help="Globus API Transfer verify checksum.",
+)
+@click.option(
+    "--preserve-timestamp",
+    default=None,
+    type=str,
+    help="Globus API Transfer preserve timestamp.",
+)
+@click.option(
+    "--encrypt-data", default=None, type=str, help="Globus API Transfer encrypt data."
+)
+@click.option(
+    "--skip-source-errors",
+    default=None,
+    type=str,
+    help="Globus API Transfer skip source errors.",
+)
+@click.option(
+    "--fail-on-quota-errors",
+    default=None,
+    type=str,
+    help="Globus API Transfer fail on quota errors .",
+)
+@click.option(
+    "--notify-on-succeeded",
+    default=None,
+    type=str,
+    help="Globus API Transfer notify on succeeded.",
+)
+@click.option(
+    "--notify-on-failed",
+    default=None,
+    type=str,
+    help="Globus API Transfer notify on failed.",
+)
+@click.option(
+    "--notify-on-inactive",
+    default=None,
+    type=str,
+    help="Globus API Transfer notify on inactive.",
 )
 @click.option(
     "--print-parameter",
@@ -363,16 +444,93 @@ def submittransfer(ctx, **kargs):
     # Debug the config passed to the program
     dump_with_auto_obfuscation(logger.debug, dict(ctx=ctx.obj), prefix="CONFIG")
 
+    if ctx.obj["label"] is None:
+        ctx.obj["label"] = MISSING
+
+    if ctx.obj["sync_level"] is None:
+        ctx.obj["sync_level"] = MISSING
+
+    if ctx.obj["verify_checksum"] is not None:
+        ctx.obj["verify_checksum"] = (
+            ctx.obj["verify_checksum"] == "True" or ctx.obj["verify_checksum"] == "true"
+        )
+    else:
+        ctx.obj["verify_checksum"] = MISSING
+
+    if ctx.obj["preserve_timestamp"] is not None:
+        ctx.obj["preserve_timestamp"] = (
+            ctx.obj["preserve_timestamp"] == "True"
+            or ctx.obj["preserve_timestamp"] == "true"
+        )
+    else:
+        ctx.obj["preserve_timestamp"] = MISSING
+
+    if ctx.obj["encrypt_data"] is not None:
+        ctx.obj["encrypt_data"] = (
+            ctx.obj["encrypt_data"] == "True" or ctx.obj["encrypt_data"] == "true"
+        )
+    else:
+        ctx.obj["encrypt_data"] = MISSING
+
+    if ctx.obj["skip_source_errors"] is not None:
+        ctx.obj["skip_source_errors"] = (
+            ctx.obj["skip_source_errors"] == "True"
+            or ctx.obj["skip_source_errors"] == "true"
+        )
+    else:
+        ctx.obj["skip_source_errors"] = MISSING
+
+    if ctx.obj["fail_on_quota_errors"] is not None:
+        ctx.obj["fail_on_quota_errors"] = (
+            ctx.obj["fail_on_quota_errors"] == "True"
+            or ctx.obj["fail_on_quota_errors"] == "true"
+        )
+    else:
+        ctx.obj["fail_on_quota_errors"] = MISSING
+
+    if ctx.obj["notify_on_succeeded"] is not None:
+        ctx.obj["notify_on_succeeded"] = (
+            ctx.obj["notify_on_succeeded"] == "True"
+            or ctx.obj["notify_on_succeeded"] == "true"
+        )
+    else:
+        ctx.obj["notify_on_succeeded"] = MISSING
+
+    if ctx.obj["notify_on_failed"] is not None:
+        ctx.obj["notify_on_failed"] = (
+            ctx.obj["notify_on_failed"] == "True"
+            or ctx.obj["notify_on_failed"] == "true"
+        )
+    else:
+        ctx.obj["notify_on_failed"] = MISSING
+
+    if ctx.obj["notify_on_inactive"] is not None:
+        ctx.obj["notify_on_inactive"] = (
+            ctx.obj["notify_on_inactive"] == "True"
+            or ctx.obj["notify_on_inactive"] == "true"
+        )
+    else:
+        ctx.obj["notify_on_inactive"] = MISSING
+
     transfer_response = submit_transfer(
         confidential_client_id=ctx.obj["confidential_client_id"],
         confidential_client_secret=ctx.obj["confidential_client_secret"],
         item_list_filename=ctx.obj["item_list_filename"],
+        filter_rule_list_filename=ctx.obj["filter_rule_list_filename"],
         source_collection_id=ctx.obj["source_collection_id"],
         source_collection_name=ctx.obj["source_collection_name"],
         destination_collection_id=ctx.obj["destination_collection_id"],
         destination_collection_name=ctx.obj["destination_collection_name"],
         label=ctx.obj["label"],
         sync_level=ctx.obj["sync_level"],
+        verify_checksum=ctx.obj["verify_checksum"],
+        preserve_timestamp=ctx.obj["preserve_timestamp"],
+        encrypt_data=ctx.obj["encrypt_data"],
+        skip_source_errors=ctx.obj["skip_source_errors"],
+        fail_on_quota_errors=ctx.obj["fail_on_quota_errors"],
+        notify_on_succeeded=ctx.obj["notify_on_succeeded"],
+        notify_on_failed=ctx.obj["notify_on_failed"],
+        notify_on_inactive=ctx.obj["notify_on_inactive"],
         json=ctx.obj["json"],
         yaml=ctx.obj["yaml"],
     )
@@ -398,7 +556,177 @@ def submittransfer(ctx, **kargs):
     "--item-list-filename",
     required=True,
     type=str,
-    help="Globus API Path to a JSON or YAML file with the list of transfers to be submitted.",
+    help="""Globus API Path to a JSON or YAML file with the list of items (files or directories) to be submitted for
+            transfer.""",
+)
+@click.option(
+    "--collection-id",
+    default=None,
+    type=str,
+    help="Globus API Source Collection UUID.",
+)
+@click.option(
+    "--collection-name",
+    default=None,
+    type=str,
+    help="Globus API Source Collection Name.",
+)
+@click.option("--label", default=None, type=str, help="Globus API Delete label.")
+@click.option(
+    "--recursive", default="True", type=str, help="Globus API Delete recursive."
+)
+@click.option(
+    "--ignore-missing",
+    default=None,
+    type=str,
+    help="Globus API Delete ignore missing.",
+)
+@click.option(
+    "--interpret-globs",
+    default=None,
+    type=str,
+    help="Globus API Delete interpret globs .",
+)
+@click.option(
+    "--notify-on-succeeded",
+    default=None,
+    type=str,
+    help="Globus API Delete notify on succeeded.",
+)
+@click.option(
+    "--notify-on-failed",
+    default=None,
+    type=str,
+    help="Globus API Delete  notify on failed.",
+)
+@click.option(
+    "--notify-on-inactive",
+    default=None,
+    type=str,
+    help="Globus API Delete notify on inactive.",
+)
+@click.option(
+    "--print-parameter",
+    default=None,
+    type=str,
+    help="Print one parameter from the submittransfer response which is a dictionary output.",
+)
+@click.option(
+    "--json",
+    default=None,
+    type=str,
+    help="Path to a JSON file to store the command's output response.",
+)
+@click.option(
+    "--yaml",
+    default=None,
+    type=str,
+    help="Path to a YAML file to store the command's output response.",
+)
+@click.pass_context
+def submitdelete(ctx, **kargs):
+    logger.setLevel(LOGGING_LEVELS[min(len(LOGGING_LEVELS) - 1, kargs["verbose"])])
+    logger.info("Submit_Delete")
+    ctx.ensure_object(dict)
+    ctx.obj.update(kargs)
+
+    # Debug the config passed to the program
+    dump_with_auto_obfuscation(logger.debug, dict(ctx=ctx.obj), prefix="CONFIG")
+
+    if ctx.obj["label"] is None:
+        ctx.obj["label"] = MISSING
+
+    if ctx.obj["recursive"] is not None:
+        ctx.obj["recursive"] = (
+            ctx.obj["recursive"] == "True" or ctx.obj["recursive"] == "true"
+        )
+    else:
+        ctx.obj["recursive"] = MISSING
+
+    if ctx.obj["ignore_missing"] is not None:
+        ctx.obj["ignore_missing"] = (
+            ctx.obj["ignore_missing"] == "True" or ctx.obj["ignore_missing"] == "true"
+        )
+    else:
+        ctx.obj["ignore_missing"] = MISSING
+
+    if ctx.obj["interpret_globs"] is not None:
+        ctx.obj["interpret_globs"] = (
+            ctx.obj["interpret_globs"] == "True" or ctx.obj["interpret_globs"] == "true"
+        )
+    else:
+        ctx.obj["interpret_globs"] = MISSING
+
+    if ctx.obj["notify_on_succeeded"] is not None:
+        ctx.obj["notify_on_succeeded"] = (
+            ctx.obj["notify_on_succeeded"] == "True"
+            or ctx.obj["notify_on_succeeded"] == "true"
+        )
+    else:
+        ctx.obj["notify_on_succeeded"] = MISSING
+
+    if ctx.obj["notify_on_failed"] is not None:
+        ctx.obj["notify_on_failed"] = (
+            ctx.obj["notify_on_failed"] == "True"
+            or ctx.obj["notify_on_failed"] == "true"
+        )
+    else:
+        ctx.obj["notify_on_failed"] = MISSING
+
+    if ctx.obj["notify_on_inactive"] is not None:
+        ctx.obj["notify_on_inactive"] = (
+            ctx.obj["notify_on_inactive"] == "True"
+            or ctx.obj["notify_on_inactive"] == "true"
+        )
+    else:
+        ctx.obj["notify_on_inactive"] = MISSING
+
+    deletion_response = submit_delete(
+        confidential_client_id=ctx.obj["confidential_client_id"],
+        confidential_client_secret=ctx.obj["confidential_client_secret"],
+        item_list_filename=ctx.obj["item_list_filename"],
+        collection_id=ctx.obj["collection_id"],
+        collection_name=ctx.obj["collection_name"],
+        label=ctx.obj["label"],
+        recursive=ctx.obj["recursive"],
+        ignore_missing=ctx.obj["ignore_missing"],
+        interpret_globs=ctx.obj["interpret_globs"],
+        notify_on_succeeded=ctx.obj["notify_on_succeeded"],
+        notify_on_failed=ctx.obj["notify_on_failed"],
+        notify_on_inactive=ctx.obj["notify_on_inactive"],
+        json=ctx.obj["json"],
+        yaml=ctx.obj["yaml"],
+    )
+
+    if ctx.obj["print_parameter"] is not None:
+        parameters = ctx.obj["print_parameter"].split(" ")
+        for i in range(0, len(parameters)):
+            click.echo(f"{deletion_response.get(key=parameters[i])}")
+
+
+@click.command()
+@click.option(
+    "-v",
+    "--verbose",
+    count=True,
+    default=0,
+    type=int,
+    help="""Verbose output. Use multiple times for more output. -v for INFO, -vv for DEBUG. If you use it three or more
+            times, then the verbose output would be equal of using it only 2 times e.g. -vvv for DEBUG, -vvvv for
+            DEBUG, etc.""",
+)
+@click.option(
+    "--item-list-filename",
+    required=True,
+    type=str,
+    help="""Globus API Path to a JSON or YAML file with the list of items (files or directories) to be submitted for
+            transfer.""",
+)
+@click.option(
+    "--filter-rule-list-filename",
+    type=str,
+    help="""Globus API Path to a JSON or YAML file with the list of transfer filter rules that will be used for the item
+            transfer.""",
 )
 @click.option(
     "--source-collection-id",
@@ -429,11 +757,56 @@ def submittransfer(ctx, **kargs):
     "--sync-level", default=None, type=int, help="Globus API Transfer sync level."
 )
 @click.option(
+    "--verify-checksum",
+    default=None,
+    type=str,
+    help="Globus API Transfer verify checksum.",
+)
+@click.option(
+    "--preserve-timestamp",
+    default=None,
+    type=str,
+    help="Globus API Transfer preserve timestamp.",
+)
+@click.option(
+    "--encrypt-data", default=None, type=str, help="Globus API Transfer encrypt data."
+)
+@click.option(
+    "--skip-source-errors",
+    default=None,
+    type=str,
+    help="Globus API Transfer skip source errors.",
+)
+@click.option(
+    "--fail-on-quota-errors",
+    default=None,
+    type=str,
+    help="Globus API Transfer fail on quota errors .",
+)
+@click.option(
+    "--notify-on-succeeded",
+    default=None,
+    type=str,
+    help="Globus API Transfer notify on succeeded.",
+)
+@click.option(
+    "--notify-on-failed",
+    default=None,
+    type=str,
+    help="Globus API Transfer notify on failed.",
+)
+@click.option(
+    "--notify-on-inactive",
+    default=None,
+    type=str,
+    help="Globus API Transfer notify on inactive.",
+)
+@click.option(
     "--check-interval",
-    default="00:01:00",
+    default="00:00:30",
     type=str,
     help="""Globus API Transfer status check time interval. Accepted formats "ss", "mm:ss", "hh:mm:ss".
-            Default is "00:01:00" seconds.""",
+            Default is "00:00:30" aka 30 seconds.""",
 )
 @click.option(
     "--autocancel-period",
@@ -443,22 +816,30 @@ def submittransfer(ctx, **kargs):
            "hh:mm:ss". Default is "00:00:00" seconds.""",
 )
 @click.option(
-    "--print-parameter",
+    "--transfer-json",
     default=None,
     type=str,
-    help="Print one parameter from the completetransfer response which is a dictionary output.",
+    help="""Path to the JSON file that stores the command's list of successful transfers response and 
+            the transfer's list of events.""",
 )
 @click.option(
-    "--json",
+    "--transfer-yaml",
     default=None,
     type=str,
-    help="Path to a JSON file to store the command's output response.",
+    help="""Path to the YAML file that stores the command's list of successful transfers response and 
+            the transfer's list of events.""",
 )
 @click.option(
-    "--yaml",
+    "--task-json",
     default=None,
     type=str,
-    help="Path to a YAML file to store the command's output response.",
+    help="Path to the JSON file that stores the command's final transfer task response.",
+)
+@click.option(
+    "--task-yaml",
+    default=None,
+    type=str,
+    help="Path to the YAML file that stores the command's final transfer task response.",
 )
 @click.pass_context
 def completetransfer(ctx, **kargs):
@@ -470,20 +851,283 @@ def completetransfer(ctx, **kargs):
     # Debug the config passed to the program
     dump_with_auto_obfuscation(logger.debug, dict(ctx=ctx.obj), prefix="CONFIG")
 
-    transfer_response = complete_transfer(
+    if ctx.obj["label"] is None:
+        ctx.obj["label"] = MISSING
+
+    if ctx.obj["sync_level"] is None:
+        ctx.obj["sync_level"] = MISSING
+
+    if ctx.obj["verify_checksum"] is not None:
+        ctx.obj["verify_checksum"] = (
+            ctx.obj["verify_checksum"] == "True" or ctx.obj["verify_checksum"] == "true"
+        )
+    else:
+        ctx.obj["verify_checksum"] = MISSING
+
+    if ctx.obj["preserve_timestamp"] is not None:
+        ctx.obj["preserve_timestamp"] = (
+            ctx.obj["preserve_timestamp"] == "True"
+            or ctx.obj["preserve_timestamp"] == "true"
+        )
+    else:
+        ctx.obj["preserve_timestamp"] = MISSING
+
+    if ctx.obj["encrypt_data"] is not None:
+        ctx.obj["encrypt_data"] = (
+            ctx.obj["encrypt_data"] == "True" or ctx.obj["encrypt_data"] == "true"
+        )
+    else:
+        ctx.obj["encrypt_data"] = MISSING
+
+    if ctx.obj["skip_source_errors"] is not None:
+        ctx.obj["skip_source_errors"] = (
+            ctx.obj["skip_source_errors"] == "True"
+            or ctx.obj["skip_source_errors"] == "true"
+        )
+    else:
+        ctx.obj["skip_source_errors"] = MISSING
+
+    if ctx.obj["fail_on_quota_errors"] is not None:
+        ctx.obj["fail_on_quota_errors"] = (
+            ctx.obj["fail_on_quota_errors"] == "True"
+            or ctx.obj["fail_on_quota_errors"] == "true"
+        )
+    else:
+        ctx.obj["fail_on_quota_errors"] = MISSING
+
+    if ctx.obj["notify_on_succeeded"] is not None:
+        ctx.obj["notify_on_succeeded"] = (
+            ctx.obj["notify_on_succeeded"] == "True"
+            or ctx.obj["notify_on_succeeded"] == "true"
+        )
+    else:
+        ctx.obj["notify_on_succeeded"] = MISSING
+
+    if ctx.obj["notify_on_failed"] is not None:
+        ctx.obj["notify_on_failed"] = (
+            ctx.obj["notify_on_failed"] == "True"
+            or ctx.obj["notify_on_failed"] == "true"
+        )
+    else:
+        ctx.obj["notify_on_failed"] = MISSING
+
+    if ctx.obj["notify_on_inactive"] is not None:
+        ctx.obj["notify_on_inactive"] = (
+            ctx.obj["notify_on_inactive"] == "True"
+            or ctx.obj["notify_on_inactive"] == "true"
+        )
+    else:
+        ctx.obj["notify_on_inactive"] = MISSING
+
+    complete_transfer(
         confidential_client_id=ctx.obj["confidential_client_id"],
         confidential_client_secret=ctx.obj["confidential_client_secret"],
         item_list_filename=ctx.obj["item_list_filename"],
+        filter_rule_list_filename=ctx.obj["filter_rule_list_filename"],
         source_collection_id=ctx.obj["source_collection_id"],
         source_collection_name=ctx.obj["source_collection_name"],
         destination_collection_id=ctx.obj["destination_collection_id"],
         destination_collection_name=ctx.obj["destination_collection_name"],
         label=ctx.obj["label"],
         sync_level=ctx.obj["sync_level"],
+        verify_checksum=ctx.obj["verify_checksum"],
+        preserve_timestamp=ctx.obj["preserve_timestamp"],
+        encrypt_data=ctx.obj["encrypt_data"],
+        skip_source_errors=ctx.obj["skip_source_errors"],
+        fail_on_quota_errors=ctx.obj["fail_on_quota_errors"],
+        notify_on_succeeded=ctx.obj["notify_on_succeeded"],
+        notify_on_failed=ctx.obj["notify_on_failed"],
+        notify_on_inactive=ctx.obj["notify_on_inactive"],
         status_change_check_interval=ctx.obj["check_interval"],
         auto_cancel_if_inactive_wait_period=ctx.obj["autocancel_period"],
-        json=ctx.obj["json"],
-        yaml=ctx.obj["yaml"],
+        transfer_json=ctx.obj["transfer_json"],
+        transfer_yaml=ctx.obj["transfer_yaml"],
+        task_json=ctx.obj["task_json"],
+        task_yaml=ctx.obj["task_yaml"],
+    )
+
+
+@click.command()
+@click.option(
+    "-v",
+    "--verbose",
+    count=True,
+    default=0,
+    type=int,
+    help="""Verbose output. Use multiple times for more output. -v for INFO, -vv for DEBUG. If you use it three or more
+            times, then the verbose output would be equal of using it only 2 times e.g. -vvv for DEBUG, -vvvv for
+            DEBUG, etc.""",
+)
+@click.option(
+    "--item-list-filename",
+    required=True,
+    type=str,
+    help="""Globus API Path to a JSON or YAML file with the list of items (files or directories) to be submitted for
+            transfer.""",
+)
+@click.option(
+    "--collection-id",
+    default=None,
+    type=str,
+    help="Globus API Source Collection UUID.",
+)
+@click.option(
+    "--collection-name",
+    default=None,
+    type=str,
+    help="Globus API Source Collection Name.",
+)
+@click.option("--label", default=None, type=str, help="Globus API Delete label.")
+@click.option(
+    "--recursive", default=True, type=str, help="Globus API Delete recursive."
+)
+@click.option(
+    "--ignore-missing",
+    default=None,
+    type=str,
+    help="Globus API Delete ignore missing.",
+)
+@click.option(
+    "--interpret-globs",
+    default=None,
+    type=str,
+    help="Globus API Delete interpret globs .",
+)
+@click.option(
+    "--notify-on-succeeded",
+    default=None,
+    type=str,
+    help="Globus API Delete notify on succeeded.",
+)
+@click.option(
+    "--notify-on-failed",
+    default=None,
+    type=str,
+    help="Globus API Delete  notify on failed.",
+)
+@click.option(
+    "--notify-on-inactive",
+    default=None,
+    type=str,
+    help="Globus API Delete notify on inactive.",
+)
+@click.option(
+    "--check-interval",
+    default="00:00:30",
+    type=str,
+    help="""Globus API Delete status check time interval. Accepted formats "ss", "mm:ss", "hh:mm:ss".
+            Default is "00:00:30" aka 30 seconds.""",
+)
+@click.option(
+    "--autocancel-period",
+    default="00:00:00",
+    type=str,
+    help="""Globus API Delete Inactivity wait period before cancelling the task. Accepted formats "ss", "mm:ss",
+           "hh:mm:ss". Default is "00:00:00" seconds.""",
+)
+@click.option(
+    "--delete-json",
+    default=None,
+    type=str,
+    help="""Path to the JSON file that stores the command's list of successful deletions response and 
+            the deletion's list of events.""",
+)
+@click.option(
+    "--delete-yaml",
+    default=None,
+    type=str,
+    help="""Path to the YAML file that stores the command's list of successful deletions response and 
+            the deletion's list of events.""",
+)
+@click.option(
+    "--task-json",
+    default=None,
+    type=str,
+    help="Path to the JSON file that stores the command's final deletion task response.",
+)
+@click.option(
+    "--task-yaml",
+    default=None,
+    type=str,
+    help="Path to the YAML file that stores the command's final deletion task response.",
+)
+@click.pass_context
+def completedelete(ctx, **kargs):
+    logger.setLevel(LOGGING_LEVELS[min(len(LOGGING_LEVELS) - 1, kargs["verbose"])])
+    logger.info("Complete_Delete")
+    ctx.ensure_object(dict)
+    ctx.obj.update(kargs)
+
+    # Debug the config passed to the program
+    dump_with_auto_obfuscation(logger.debug, dict(ctx=ctx.obj), prefix="CONFIG")
+
+    if ctx.obj["label"] is None:
+        ctx.obj["label"] = MISSING
+
+    if ctx.obj["recursive"] is not None:
+        ctx.obj["recursive"] = (
+            ctx.obj["recursive"] == "True" or ctx.obj["recursive"] == "true"
+        )
+    else:
+        ctx.obj["recursive"] = MISSING
+
+    if ctx.obj["ignore_missing"] is not None:
+        ctx.obj["ignore_missing"] = (
+            ctx.obj["ignore_missing"] == "True" or ctx.obj["ignore_missing"] == "true"
+        )
+    else:
+        ctx.obj["ignore_missing"] = MISSING
+
+    if ctx.obj["interpret_globs"] is not None:
+        ctx.obj["interpret_globs"] = (
+            ctx.obj["interpret_globs"] == "True" or ctx.obj["interpret_globs"] == "true"
+        )
+    else:
+        ctx.obj["interpret_globs"] = MISSING
+
+    if ctx.obj["notify_on_succeeded"] is not None:
+        ctx.obj["notify_on_succeeded"] = (
+            ctx.obj["notify_on_succeeded"] == "True"
+            or ctx.obj["notify_on_succeeded"] == "true"
+        )
+    else:
+        ctx.obj["notify_on_succeeded"] = MISSING
+
+    if ctx.obj["notify_on_failed"] is not None:
+        ctx.obj["notify_on_failed"] = (
+            ctx.obj["notify_on_failed"] == "True"
+            or ctx.obj["notify_on_failed"] == "true"
+        )
+    else:
+        ctx.obj["notify_on_failed"] = MISSING
+
+    if ctx.obj["notify_on_inactive"] is not None:
+        ctx.obj["notify_on_inactive"] = (
+            ctx.obj["notify_on_inactive"] == "True"
+            or ctx.obj["notify_on_inactive"] == "true"
+        )
+    else:
+        ctx.obj["notify_on_inactive"] = MISSING
+
+    complete_delete(
+        confidential_client_id=ctx.obj["confidential_client_id"],
+        confidential_client_secret=ctx.obj["confidential_client_secret"],
+        item_list_filename=ctx.obj["item_list_filename"],
+        collection_id=ctx.obj["collection_id"],
+        collection_name=ctx.obj["collection_name"],
+        label=ctx.obj["label"],
+        recursive=ctx.obj["recursive"],
+        ignore_missing=ctx.obj["ignore_missing"],
+        interpret_globs=ctx.obj["interpret_globs"],
+        notify_on_succeeded=ctx.obj["notify_on_succeeded"],
+        notify_on_failed=ctx.obj["notify_on_failed"],
+        notify_on_inactive=ctx.obj["notify_on_inactive"],
+        status_change_check_interval=ctx.obj["check_interval"],
+        auto_cancel_if_inactive_wait_period=ctx.obj["autocancel_period"],
+        delete_json=ctx.obj["delete_json"],
+        delete_yaml=ctx.obj["delete_yaml"],
+        task_json=ctx.obj["task_json"],
+        task_yaml=ctx.obj["task_yaml"],
     )
 
 
@@ -1108,3 +1752,68 @@ def monitoredcollectionlist(ctx, **kargs):
         json=ctx.obj["json"],
         yaml=ctx.obj["yaml"],
     )
+
+
+@click.command()
+@click.option(
+    "-v",
+    "--verbose",
+    count=True,
+    default=0,
+    type=int,
+    help="""Verbose output. Use multiple times for more output. -v for INFO, -vv for DEBUG. If you use it three or more
+            times, then the verbose output would be equal of using it only 2 times e.g. -vvv for DEBUG, -vvvv for
+            DEBUG, etc.""",
+)
+@click.option(
+    "--collection-id",
+    default=None,
+    type=str,
+    help="Globus API Collection UUID.",
+)
+@click.option(
+    "--collection-name",
+    default=None,
+    type=str,
+    help="Globus API Collection Name.",
+)
+@click.option("--path", default="/", type=str, help="Globus API Permission Path.")
+@click.option(
+    "--print-url",
+    is_flag=True,
+    help="Print the URL based on the provided collection and path. Type True or False.",
+)
+@click.option(
+    "--json",
+    default=None,
+    type=str,
+    help="Path to a JSON file to store the command's output response.",
+)
+@click.option(
+    "--yaml",
+    default=None,
+    type=str,
+    help="Path to a YAML file to store the command's output response.",
+)
+@click.pass_context
+def geturl(ctx, **kargs):
+    logger.setLevel(LOGGING_LEVELS[min(len(LOGGING_LEVELS) - 1, kargs["verbose"])])
+    logger.info("Get_URL")
+    ctx.ensure_object(dict)
+    ctx.obj.update(kargs)
+
+    # Debug the config passed to the program
+    dump_with_auto_obfuscation(logger.debug, dict(ctx=ctx.obj), prefix="CONFIG")
+
+    url = get_url(
+        confidential_client_id=ctx.obj["confidential_client_id"],
+        confidential_client_secret=ctx.obj["confidential_client_secret"],
+        collection_name=ctx.obj["collection_name"],
+        collection_id=ctx.obj["collection_id"],
+        path=ctx.obj["path"],
+        json=ctx.obj["json"],
+        yaml=ctx.obj["yaml"],
+    )
+
+    if ctx.obj["print_url"]:
+        click.echo(f"{url}")
