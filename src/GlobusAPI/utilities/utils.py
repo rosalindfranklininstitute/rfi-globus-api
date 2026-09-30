@@ -56,7 +56,7 @@ def time_string_to_integer_seconds(time_string: str = "00:00:30") -> int:
     if len(interval) == 1:
         interval = int(interval[0])
     elif len(interval) == 2:
-        interval = int(interval[1]) * 60 + int(interval[0])
+        interval = int(interval[0]) * 60 + int(interval[1])
     else:
         interval = (int(interval[0]) * 60 + int(interval[1])) * 60 + int(interval[2])
     if interval < 0:

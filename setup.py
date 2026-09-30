@@ -29,7 +29,7 @@ with open(
     dev_requires = fp.read().splitlines()
 
 setup(
-    version="0.0.22",
+    version="0.0.23",
     name="GlobusAPI",
     description="Containerized API for interacting with Globus.",
     url="https://github.com/rosalindfranklininstitute/rfi-globus-api",
