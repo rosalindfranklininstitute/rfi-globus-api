@@ -50,8 +50,14 @@ class TestCliTransfers(unittest.TestCase):
         cls.destination_collection_name = os.environ[
             "GLOBUSAPI_DESTINATION_COLLECTION_NAME"
         ]
-        cls.item_list_filename = (
+        cls.transfer_item_list_filename = (
             "/usr/local/GlobusAPI/tests/GlobusAPI/data/transfer_list.json"
+        )
+        cls.filter_rule_list_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/data/filter_rule_list.json"
+        )
+        cls.delete_item_list_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/data/delete_list.json"
         )
         cls.wait_period_for_transfers = int(
             os.environ["GLOBUSAPI_WAIT_PERIOD_FOR_TRANSFERS"]
@@ -66,7 +72,7 @@ class TestCliTransfers(unittest.TestCase):
             current_transfer_client=cls.transfer_client,
             source_collection_id=cls.source_collection_id,
             destination_collection_id=cls.destination_collection_id,
-            item_list_filename=cls.item_list_filename,
+            item_list_filename=cls.transfer_item_list_filename,
             label="Unit_Test_Transfer",
             sync_level=None,
         )
@@ -88,11 +94,13 @@ class TestCliTransfers(unittest.TestCase):
         # Transfer commands
         cli.add_command(GlobusAPI_cli.successfultransfers)
         cli.add_command(GlobusAPI_cli.submittransfer)
+        cli.add_command(GlobusAPI_cli.submitdelete)
         cli.add_command(GlobusAPI_cli.canceltasks)
         cli.add_command(GlobusAPI_cli.gettask)
         cli.add_command(GlobusAPI_cli.tasklist)
         cli.add_command(GlobusAPI_cli.taskeventlist)
         cli.add_command(GlobusAPI_cli.completetransfer)
+        cli.add_command(GlobusAPI_cli.completedelete)
         cli.add_command(GlobusAPI_cli.getmonitoredcollection)
         cli.add_command(GlobusAPI_cli.monitoredcollectionlist)
 
@@ -113,7 +121,7 @@ class TestCliTransfers(unittest.TestCase):
                 "--destination-collection-id",
                 self.destination_collection_id,
                 "--item-list-filename",
-                self.item_list_filename,
+                self.transfer_item_list_filename,
                 "--label",
                 "Unit_Test_Transfer",
                 "--print-parameter",
@@ -244,9 +252,149 @@ class TestCliTransfers(unittest.TestCase):
                 "--destination-collection-name",
                 self.destination_collection_name,
                 "--item-list-filename",
-                self.item_list_filename,
+                self.transfer_item_list_filename,
+                "--filter-rule-list-filename",
+                self.filter_rule_list_filename,
                 "--label",
                 "Unit_Test_Transfer",
+                "--verify-checksum",
+                "True",
+                "--preserve-timestamp",
+                "True",
+                "--encrypt-data",
+                "False",
+                "--skip-source-errors",
+                "False",
+                "--fail-on-quota-errors",
+                "True",
+                "--notify-on-succeeded",
+                "False",
+                "--notify-on-failed",
+                "True",
+                "--notify-on-inactive",
+                "True",
+                "--print-parameter",
+                "task_id",
+                "-v",
+            ],
+        )
+
+        task_id = str(result.output)[-37:-1]
+
+        time.sleep(self.wait_period_for_transfers)
+
+        task_info_result = self.runner.invoke(
+            cli,
+            [
+                "--confidential-client-id",
+                self.confidential_client_id,
+                "--confidential-client-secret",
+                self.confidential_client_secret,
+                "gettask",
+                "--task-id",
+                task_id,
+                "--print-parameter",
+                "status",
+                "-v",
+            ],
+        )
+
+        status = str(task_info_result.output)[-10:-1]
+
+        while status != "SUCCEEDED":
+            time.sleep(self.wait_period_for_transfers)
+            task_info_result = self.runner.invoke(
+                cli,
+                [
+                    "--confidential-client-id",
+                    self.confidential_client_id,
+                    "--confidential-client-secret",
+                    self.confidential_client_secret,
+                    "gettask",
+                    "--task-id",
+                    task_id,
+                    "--print-parameter",
+                    "status",
+                    "-v",
+                ],
+            )
+            status = str(task_info_result.output)[-10:-1]
+
+        self.assertEqual(SUCCESSFUL_EXIT_CODE, result.exit_code)
+        self.assertIn("SystemExit(0)", str(result.exc_info))
+
+    def test_cli_submit_delete(self):
+        logger.info("Start submit delete test ...")
+        self.runner.invoke(
+            cli,
+            [
+                "--confidential-client-id",
+                self.confidential_client_id,
+                "--confidential-client-secret",
+                self.confidential_client_secret,
+                "completetransfer",
+                "--item-list-filename",
+                self.transfer_item_list_filename,
+                "--filter-rule-list-filename",
+                self.filter_rule_list_filename,
+                "--source-collection-id",
+                self.source_collection_id,
+                "--source-collection-name",
+                self.source_collection_name,
+                "--destination-collection-id",
+                self.destination_collection_id,
+                "--destination-collection-name",
+                self.destination_collection_name,
+                "--label",
+                "Unit_Test_Transfer",
+                "--verify-checksum",
+                "True",
+                "--preserve-timestamp",
+                "True",
+                "--encrypt-data",
+                "False",
+                "--skip-source-errors",
+                "False",
+                "--fail-on-quota-errors",
+                "True",
+                "--notify-on-succeeded",
+                "False",
+                "--notify-on-failed",
+                "True",
+                "--notify-on-inactive",
+                "True",
+                "-v",
+            ],
+        )
+
+        result = self.runner.invoke(
+            cli,
+            [
+                "--confidential-client-id",
+                self.confidential_client_id,
+                "--confidential-client-secret",
+                self.confidential_client_secret,
+                "submitdelete",
+                "--collection-id",
+                self.destination_collection_id,
+                "--collection-name",
+                self.destination_collection_name,
+                "--item-list-filename",
+                self.delete_item_list_filename,
+                "--label",
+                "Unit_Test_Delete",
+                "--recursive",
+                "True",
+                "--ignore-missing",
+                "False",
+                "--interpret-globs",
+                "False",
+                "--notify-on-succeeded",
+                "False",
+                "--notify-on-failed",
+                "True",
+                "--notify-on-inactive",
+                "True",
                 "--print-parameter",
                 "task_id",
                 "-v",
@@ -308,7 +456,9 @@ class TestCliTransfers(unittest.TestCase):
                 self.confidential_client_secret,
                 "completetransfer",
                 "--item-list-filename",
-                self.item_list_filename,
+                self.transfer_item_list_filename,
+                "--filter-rule-list-filename",
+                self.filter_rule_list_filename,
                 "--source-collection-id",
                 self.source_collection_id,
                 "--source-collection-name",
@@ -319,12 +469,258 @@ class TestCliTransfers(unittest.TestCase):
                 self.destination_collection_name,
                 "--label",
                 "Unit_Test_Transfer",
+                "--verify-checksum",
+                "True",
+                "--preserve-timestamp",
+                "True",
+                "--encrypt-data",
+                "False",
+                "--skip-source-errors",
+                "False",
+                "--fail-on-quota-errors",
+                "True",
+                "--notify-on-succeeded",
+                "False",
+                "--notify-on-failed",
+                "True",
+                "--notify-on-inactive",
+                "True",
                 "-v",
             ],
         )
 
         self.assertEqual(SUCCESSFUL_EXIT_CODE, result.exit_code)
         self.assertIn("SystemExit(0)", str(result.exc_info))
+
+    def test_cli_complete_transfer_with_output_json_and_yaml(self):
+        logger.info("Start complete transfer test with json and yaml output...")
+
+        transfer_json_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/outputs/clicompletetransferinfo.json"
+        )
+        transfer_yaml_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/outputs/clicompletetransferinfo.yaml"
+        )
+        task_json_filename = "/usr/local/GlobusAPI/tests/GlobusAPI/outputs/clicompletetransfertaskinfo.json"
+        task_yaml_filename = "/usr/local/GlobusAPI/tests/GlobusAPI/outputs/clicompletetransfertaskinfo.yaml"
+
+        result = self.runner.invoke(
+            cli,
+            [
+                "--confidential-client-id",
+                self.confidential_client_id,
+                "--confidential-client-secret",
+                self.confidential_client_secret,
+                "completetransfer",
+                "--item-list-filename",
+                self.transfer_item_list_filename,
+                "--source-collection-id",
+                self.source_collection_id,
+                "--destination-collection-id",
+                self.destination_collection_id,
+                "--label",
+                "Unit_Test_Transfer",
+                "--transfer-json",
+                transfer_json_filename,
+                "--transfer-yaml",
+                transfer_yaml_filename,
+                "--task-json",
+                task_json_filename,
+                "--task-yaml",
+                task_yaml_filename,
+                "-v",
+            ],
+        )
+
+        self.assertEqual(SUCCESSFUL_EXIT_CODE, result.exit_code)
+        self.assertIn("SystemExit(0)", str(result.exc_info))
+
+        self.assertTrue(os.path.isfile(transfer_json_filename))
+        self.assertTrue(os.path.isfile(transfer_yaml_filename))
+        self.assertTrue(os.path.isfile(task_json_filename))
+        self.assertTrue(os.path.isfile(task_yaml_filename))
+
+        expected_transfer_keys = {
+            "successful_transfers",
+            "base_url",
+            "event_list",
+            "status",
+        }
+        with open(transfer_json_filename) as f:
+            transfer_json_content = json.load(f)
+        with open(transfer_yaml_filename) as f:
+            transfer_yaml_content = yaml.safe_load(f)
+        for content in (transfer_json_content, transfer_yaml_content):
+            self.assertEqual(set(content.keys()), expected_transfer_keys)
+
+        with open(task_json_filename) as f:
+            task_json_content = json.load(f)
+        with open(task_yaml_filename) as f:
+            task_yaml_content = yaml.safe_load(f)
+        for content in (task_json_content, task_yaml_content):
+            self.assertIn("task_id", content)
+            self.assertIn("status", content)
+
+    def test_cli_complete_delete(self):
+        logger.info("Start complete delete test ...")
+        self.runner.invoke(
+            cli,
+            [
+                "--confidential-client-id",
+                self.confidential_client_id,
+                "--confidential-client-secret",
+                self.confidential_client_secret,
+                "completetransfer",
+                "--item-list-filename",
+                self.transfer_item_list_filename,
+                "--filter-rule-list-filename",
+                self.filter_rule_list_filename,
+                "--source-collection-id",
+                self.source_collection_id,
+                "--source-collection-name",
+                self.source_collection_name,
+                "--destination-collection-id",
+                self.destination_collection_id,
+                "--destination-collection-name",
+                self.destination_collection_name,
+                "--label",
+                "Unit_Test_Transfer",
+                "--verify-checksum",
+                "True",
+                "--preserve-timestamp",
+                "True",
+                "--encrypt-data",
+                "False",
+                "--skip-source-errors",
+                "False",
+                "--fail-on-quota-errors",
+                "True",
+                "--notify-on-succeeded",
+                "False",
+                "--notify-on-failed",
+                "True",
+                "--notify-on-inactive",
+                "True",
+                "-v",
+            ],
+        )
+
+        result = self.runner.invoke(
+            cli,
+            [
+                "--confidential-client-id",
+                self.confidential_client_id,
+                "--confidential-client-secret",
+                self.confidential_client_secret,
+                "completedelete",
+                "--collection-id",
+                self.destination_collection_id,
+                "--collection-name",
+                self.destination_collection_name,
+                "--item-list-filename",
+                self.delete_item_list_filename,
+                "--label",
+                "Unit_Test_Delete",
+                "--recursive",
+                "True",
+                "--ignore-missing",
+                "False",
+                "--interpret-globs",
+                "False",
+                "--notify-on-succeeded",
+                "False",
+                "--notify-on-failed",
+                "True",
+                "--notify-on-inactive",
+                "True",
+                "-v",
+            ],
+        )
+
+        self.assertEqual(SUCCESSFUL_EXIT_CODE, result.exit_code)
+        self.assertIn("SystemExit(0)", str(result.exc_info))
+
+    def test_cli_complete_delete_with_output_json_and_yaml(self):
+        logger.info("Start complete delete test with json and yaml output...")
+
+        self.runner.invoke(
+            cli,
+            [
+                "--confidential-client-id",
+                self.confidential_client_id,
+                "--confidential-client-secret",
+                self.confidential_client_secret,
+                "completetransfer",
+                "--item-list-filename",
+                self.transfer_item_list_filename,
+                "--source-collection-id",
+                self.source_collection_id,
+                "--destination-collection-id",
+                self.destination_collection_id,
+                "--label",
+                "Unit_Test_Transfer",
+                "-v",
+            ],
+        )
+
+        delete_json_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/outputs/clicompletedeleteinfo.json"
+        )
+        delete_yaml_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/outputs/clicompletedeleteinfo.yaml"
+        )
+        task_json_filename = "/usr/local/GlobusAPI/tests/GlobusAPI/outputs/clicompletedeletetaskinfo.json"
+        task_yaml_filename = "/usr/local/GlobusAPI/tests/GlobusAPI/outputs/clicompletedeletetaskinfo.yaml"
+
+        result = self.runner.invoke(
+            cli,
+            [
+                "--confidential-client-id",
+                self.confidential_client_id,
+                "--confidential-client-secret",
+                self.confidential_client_secret,
+                "completedelete",
+                "--collection-id",
+                self.destination_collection_id,
+                "--item-list-filename",
+                self.delete_item_list_filename,
+                "--label",
+                "Unit_Test_Delete",
+                "--delete-json",
+                delete_json_filename,
+                "--delete-yaml",
+                delete_yaml_filename,
+                "--task-json",
+                task_json_filename,
+                "--task-yaml",
+                task_yaml_filename,
+                "-v",
+            ],
+        )
+
+        self.assertEqual(SUCCESSFUL_EXIT_CODE, result.exit_code)
+        self.assertIn("SystemExit(0)", str(result.exc_info))
+
+        self.assertTrue(os.path.isfile(delete_json_filename))
+        self.assertTrue(os.path.isfile(delete_yaml_filename))
+        self.assertTrue(os.path.isfile(task_json_filename))
+        self.assertTrue(os.path.isfile(task_yaml_filename))
+
+        expected_delete_keys = {"successful_deletions", "event_list", "status"}
+        with open(delete_json_filename) as f:
+            delete_json_content = json.load(f)
+        with open(delete_yaml_filename) as f:
+            delete_yaml_content = yaml.safe_load(f)
+        for content in (delete_json_content, delete_yaml_content):
+            self.assertEqual(set(content.keys()), expected_delete_keys)
+
+        with open(task_json_filename) as f:
+            task_json_content = json.load(f)
+        with open(task_yaml_filename) as f:
+            task_yaml_content = yaml.safe_load(f)
+        for content in (task_json_content, task_yaml_content):
+            self.assertIn("task_id", content)
+            self.assertIn("status", content)
 
     def test_cli_successful_transfer(self):
         logger.info("Start successful transfer test ...")
@@ -824,3 +1220,59 @@ class TestCliACLRules(unittest.TestCase):
         collections.guest._delete_guest_collection(
             cls.gcs_client, cls.guest_collection_name
         )
+
+
+class TestCliURL(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.confidential_client_id = os.environ["GLOBUSAPI_CONFIDENTIAL_CLIENT_ID"]
+        cls.confidential_client_secret = os.environ[
+            "GLOBUSAPI_CONFIDENTIAL_CLIENT_SECRET"
+        ]
+        cls.collection_id = os.environ["GLOBUSAPI_SOURCE_COLLECTION_ID"]
+        cls.collection_name = os.environ["GLOBUSAPI_SOURCE_COLLECTION_NAME"]
+
+        item_list_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/data/transfer_list.json"
+        )
+        try:
+            if item_list_filename[-5:] == ".json" or item_list_filename[-5:] == ".JSON":
+                cls.item_list = json.load(open(item_list_filename))
+            else:
+                cls.item_list = yaml.safe_load(open(item_list_filename))
+        except Exception as ex:
+            logger.exception(
+                "Failed to load the list of items to be submitted for transfer...",
+                exc_info=ex,
+            )
+            raise ex
+
+        # URL commands
+        cli.add_command(GlobusAPI_cli.geturl)
+
+        cls.runner = CliRunner()
+
+    def test_cli_get_url(self):
+        logger.info("Start get url test ...")
+
+        result = self.runner.invoke(
+            cli,
+            [
+                "--confidential-client-id",
+                self.confidential_client_id,
+                "--confidential-client-secret",
+                self.confidential_client_secret,
+                "geturl",
+                "--collection-name",
+                self.collection_name,
+                "--collection-id",
+                self.collection_id,
+                "--path",
+                self.item_list[0]["source_path"],
+                "--print-url",
+                "-v",
+            ],
+        )
+
+        self.assertEqual(SUCCESSFUL_EXIT_CODE, result.exit_code)
+        self.assertIn("SystemExit(0)", str(result.exc_info))

@@ -17,7 +17,7 @@
 import typing
 
 from globus_sdk import AuthClient
-from globus_sdk._types import ScopeCollectionType
+from globus_sdk.scopes import Scope
 from globus_sdk.response import GlobusHTTPResponse
 from globus_sdk.scopes import AuthScopes
 
@@ -31,21 +31,16 @@ logger = get_logger()
 def auth_client(
     confidential_client_id: str,
     confidential_client_secret: str,
-    scopes: typing.Optional[ScopeCollectionType] = None,
+    scopes: typing.Optional[typing.Union[str,Scope,typing.Iterable[typing.Union[str,Scope]]]] = None,
 ) -> AuthClient:
     """Return an auth client object initialized with the given parameters
 
     Args:
         confidential_client_id (str, required): The uuid of the confidential client that you are using.
         confidential_client_secret (str, required): The secret of the confidential client.
-        scopes (typing.Optional[ScopeCollectionType], optional): The Globus Scopes for the
-                                                                 auth client.
-                                                                 Defaults to a list: [
-                                                                 AuthScopes.openid,
-                                                                 AuthScopes.profile,
-                                                                 AuthScopes.email,
-                                                                 AuthScopes.view_identity_set
-                                                                 ].
+        scopes (typing.Optional[typing.Union[str,Scope,typing.Iterable[typing.Union[str,Scope]]]], optional):
+                The Globus Scopes for the auth client.Defaults to an iterable of Scopes:
+                [AuthScopes.openid, AuthScopes.profile, AuthScopes.email, AuthScopes.view_identity_set].
 
     Returns:
         It returns an auth client object initialized with the given parameters.
@@ -56,12 +51,14 @@ def auth_client(
 
     """
     if scopes is None:
-        scopes = [
-            AuthScopes.openid,
-            AuthScopes.profile,
-            AuthScopes.email,
-            AuthScopes.view_identity_set,
-        ]
+        scopes = iter(
+            [
+                AuthScopes.openid,
+                AuthScopes.profile,
+                AuthScopes.email,
+                AuthScopes.view_identity_set,
+            ]
+        )
     try:
         auth_authorizer = GlobusAPI.auth.authorizer.get_client_credentials_authorizer(
             confidential_client_id, confidential_client_secret, scopes

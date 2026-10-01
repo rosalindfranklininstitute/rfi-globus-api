@@ -29,11 +29,11 @@ with open(
     dev_requires = fp.read().splitlines()
 
 setup(
-    version="0.0.17",
+    version="0.0.23",
     name="GlobusAPI",
     description="Containerized API for interacting with Globus.",
     url="https://github.com/rosalindfranklininstitute/rfi-globus-api",
-    author="Joss Whittle, Sylvie Ramos, Dimitrios Bellos, Laura Shemilt, Nick Crawford, Gabryel Mason-Williams",
+    author="Joss Whittle, Sylvie Ramos, Dimitrios Bellos, Laura Shemilt, Nick Crawford, Gabryel Mason-Williams, Alex Lubbock",
     author_email="arc@rfi.ac.uk",
     packages=find_packages("src"),
     package_dir={"": "src"},

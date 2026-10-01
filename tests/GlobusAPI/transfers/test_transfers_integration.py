@@ -19,7 +19,9 @@ import os
 import time
 import unittest
 
+import validators
 import yaml
+from globus_sdk._missing import MISSING, MissingType
 from globus_sdk.scopes import AuthScopes, TransferScopes
 
 import GlobusAPI
@@ -46,8 +48,16 @@ class TestTransfers(unittest.TestCase):
         cls.destination_collection_name = os.environ[
             "GLOBUSAPI_DESTINATION_COLLECTION_NAME"
         ]
-        cls.item_list_filename = (
+        cls.transfer_item_list_filename = (
             "/usr/local/GlobusAPI/tests/GlobusAPI/data/transfer_list.json"
+        )
+        cls.filter_rule_list_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/data/filter_rule_list.json"
+        )
+        cls.filter_rule_list_filename_incorrect_method = "/usr/local/GlobusAPI/tests/GlobusAPI/data/filter_rule_list_incorrect_method.json"
+        cls.filter_rule_list_filename_incorrect_type = "/usr/local/GlobusAPI/tests/GlobusAPI/data/filter_rule_list_incorrect_type.json"
+        cls.delete_item_list_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/data/delete_list.json"
         )
         cls.non_existing_collection_name = os.environ[
             "GLOBUSAPI_NON_EXISTING_COLLECTION_NAME"
@@ -66,9 +76,9 @@ class TestTransfers(unittest.TestCase):
             current_transfer_client=cls.transfer_client,
             source_collection_id=cls.source_collection_id,
             destination_collection_id=cls.destination_collection_id,
-            item_list_filename=cls.item_list_filename,
+            item_list_filename=cls.transfer_item_list_filename,
             label="Unit_Test_Transfer",
-            sync_level=None,
+            sync_level=MISSING,
         )
 
         cls.task_id = cls.transfer_response.get(key="task_id")
@@ -106,7 +116,7 @@ class TestTransfers(unittest.TestCase):
             )
 
     def test_successful_transfer_incorrect_transfer_client(self):
-        logger.info("Start test successful transfers incorrect task_id...")
+        logger.info("Start test successful transfers incorrect transfer client...")
 
         with self.assertRaises(Exception):
             transfers.transfer_methods._task_successful_transfers(
@@ -148,9 +158,9 @@ class TestTransfers(unittest.TestCase):
                 current_transfer_client=None,
                 source_collection_id=self.source_collection_id,
                 destination_collection_id=self.destination_collection_id,
-                item_list_filename=self.item_list_filename,
+                item_list_filename=self.transfer_item_list_filename,
                 label="Unit_Test_Transfer",
-                sync_level=None,
+                sync_level=MISSING,
             )
 
     def test_submit_transfer_incorrect_source_collection_id(self):
@@ -161,9 +171,9 @@ class TestTransfers(unittest.TestCase):
                 current_transfer_client=self.transfer_client,
                 source_collection_id=None,
                 destination_collection_id=self.destination_collection_id,
-                item_list_filename=self.item_list_filename,
+                item_list_filename=self.transfer_item_list_filename,
                 label="Unit_Test_Transfer",
-                sync_level=None,
+                sync_level=MISSING,
             )
 
     def test_submit_transfer_incorrect_source_collection_name(self):
@@ -174,9 +184,9 @@ class TestTransfers(unittest.TestCase):
                 current_transfer_client=self.transfer_client,
                 source_collection_name=None,
                 destination_collection_name=self.destination_collection_name,
-                item_list_filename=self.item_list_filename,
+                item_list_filename=self.transfer_item_list_filename,
                 label="Unit_Test_Transfer",
-                sync_level=None,
+                sync_level=MISSING,
             )
 
     def test_submit_transfer_incorrect_destination_collection_id(self):
@@ -187,9 +197,9 @@ class TestTransfers(unittest.TestCase):
                 current_transfer_client=self.transfer_client,
                 source_collection_id=self.source_collection_id,
                 destination_collection_id=None,
-                item_list_filename=self.item_list_filename,
+                item_list_filename=self.transfer_item_list_filename,
                 label="Unit_Test_Transfer",
-                sync_level=None,
+                sync_level=MISSING,
             )
 
     def test_submit_transfer_incorrect_destination_collection_name(self):
@@ -202,9 +212,9 @@ class TestTransfers(unittest.TestCase):
                 current_transfer_client=self.transfer_client,
                 source_collection_name=self.source_collection_name,
                 destination_collection_name=None,
-                item_list_filename=self.item_list_filename,
+                item_list_filename=self.transfer_item_list_filename,
                 label="Unit_Test_Transfer",
-                sync_level=None,
+                sync_level=MISSING,
             )
 
     def test_submit_transfer_incorrect_item_list_filename(self):
@@ -217,7 +227,49 @@ class TestTransfers(unittest.TestCase):
                 destination_collection_id=self.destination_collection_id,
                 item_list_filename="None",
                 label="Unit_Test_Transfer",
-                sync_level=None,
+                sync_level=MISSING,
+            )
+
+    def test_submit_transfer_incorrect_filter_rule_list_filename(self):
+        logger.info("Start test submit transfer incorrect filter rule list filename...")
+
+        with self.assertRaises(Exception):
+            transfers.transfer_methods._submit_transfer(
+                current_transfer_client=self.transfer_client,
+                source_collection_id=self.source_collection_id,
+                destination_collection_id=self.destination_collection_id,
+                item_list_filename=self.transfer_item_list_filename,
+                filter_rule_list_filename="None",
+                label="Unit_Test_Transfer",
+                sync_level=MISSING,
+            )
+
+    def test_submit_transfer_incorrect_method_in_filter_rule(self):
+        logger.info("Start test submit transfer incorrect method in filter rule...")
+
+        with self.assertRaises(ValueError):
+            transfers.transfer_methods._submit_transfer(
+                current_transfer_client=self.transfer_client,
+                source_collection_id=self.source_collection_id,
+                destination_collection_id=self.destination_collection_id,
+                item_list_filename=self.transfer_item_list_filename,
+                filter_rule_list_filename=self.filter_rule_list_filename_incorrect_method,
+                label="Unit_Test_Transfer",
+                sync_level=MISSING,
+            )
+
+    def test_submit_transfer_incorrect_type_in_filter_rule(self):
+        logger.info("Start test submit transfer incorrect method in filter rule...")
+
+        with self.assertRaises(ValueError):
+            transfers.transfer_methods._submit_transfer(
+                current_transfer_client=self.transfer_client,
+                source_collection_id=self.source_collection_id,
+                destination_collection_id=self.destination_collection_id,
+                item_list_filename=self.transfer_item_list_filename,
+                filter_rule_list_filename=self.filter_rule_list_filename_incorrect_type,
+                label="Unit_Test_Transfer",
+                sync_level=MISSING,
             )
 
     def test_submit_transfer_incorrect_sync_level(self):
@@ -228,7 +280,7 @@ class TestTransfers(unittest.TestCase):
                 current_transfer_client=self.transfer_client,
                 source_collection_id=self.source_collection_id,
                 destination_collection_id=self.destination_collection_id,
-                item_list_filename=self.item_list_filename,
+                item_list_filename=self.transfer_item_list_filename,
                 label="Unit_Test_Transfer",
                 sync_level=4,
             )
@@ -240,9 +292,10 @@ class TestTransfers(unittest.TestCase):
             current_transfer_client=self.transfer_client,
             source_collection_id=self.source_collection_id,
             destination_collection_id=self.destination_collection_id,
-            item_list_filename=self.item_list_filename,
+            item_list_filename=self.transfer_item_list_filename,
+            filter_rule_list_filename=self.filter_rule_list_filename,
             label="Unit_Test_Transfer",
-            sync_level=None,
+            sync_level=MISSING,
         )
         self.task_id = transfer_response.get(key="task_id")
         self.task_info = transfers.transfer_methods._get_task(
@@ -267,11 +320,119 @@ class TestTransfers(unittest.TestCase):
             current_transfer_client=self.transfer_client,
             source_collection_name=self.source_collection_name,
             destination_collection_name=self.destination_collection_name,
-            item_list_filename=self.item_list_filename,
+            item_list_filename=self.transfer_item_list_filename,
             label="Unit_Test_Transfer",
-            sync_level=None,
+            sync_level=MISSING,
         )
         self.task_id = transfer_response.get(key="task_id")
+        self.task_info = transfers.transfer_methods._get_task(
+            current_transfer_client=self.transfer_client, task_id=self.task_id
+        )
+        while (
+            self.task_info.get(key="status") != "SUCCEEDED"
+            and self.task_info.get(key="status") != "FAILED"
+        ):
+            time.sleep(self.wait_period_for_transfers)
+            self.task_info = transfers.transfer_methods._get_task(
+                current_transfer_client=self.transfer_client, task_id=self.task_id
+            )
+        self.assertTrue(self.task_info.get(key="status") == "SUCCEEDED")
+
+    def test_submit_delete_incorrect_client(self):
+        logger.info("Start test submit delete incorrect transfer client...")
+
+        with self.assertRaises(Exception):
+            transfers.transfer_methods._submit_delete(
+                current_transfer_client=None,
+                collection_id=self.destination_collection_id,
+                item_list_filename=self.delete_item_list_filename,
+                label="Unit_Test_Delete",
+            )
+
+    def test_submit_delete_incorrect_collection_id(self):
+        logger.info("Start test submit delete incorrect collection id...")
+
+        with self.assertRaises(ValueError):
+            transfers.transfer_methods._submit_delete(
+                current_transfer_client=self.transfer_client,
+                collection_id=None,
+                item_list_filename=self.delete_item_list_filename,
+                label="Unit_Test_Delete",
+            )
+
+    def test_submit_delete_incorrect_collection_name(self):
+        logger.info("Start test submit delete incorrect collection name...")
+
+        with self.assertRaises(ValueError):
+            transfers.transfer_methods._submit_delete(
+                current_transfer_client=self.transfer_client,
+                collection_name=None,
+                item_list_filename=self.delete_item_list_filename,
+                label="Unit_Test_Delete",
+            )
+
+    def test_submit_delete_incorrect_item_list_filename(self):
+        logger.info("Start test submit delete incorrect item list filename...")
+
+        with self.assertRaises(Exception):
+            transfers.transfer_methods._submit_delete(
+                current_transfer_client=self.transfer_client,
+                collection_id=self.destination_collection_id,
+                item_list_filename="None",
+                label="Unit_Test_Delete",
+            )
+
+    def test_submit_delete(self):
+        logger.info("Start test submit delete...")
+
+        transfers.transfer_methods._complete_transfer(
+            current_transfer_client=self.transfer_client,
+            source_collection_id=self.source_collection_id,
+            destination_collection_id=self.destination_collection_id,
+            item_list_filename=self.transfer_item_list_filename,
+            label="Unit_Test_Transfer",
+            sync_level=MISSING,
+        )
+        deletion_response = transfers.transfer_methods._submit_delete(
+            current_transfer_client=self.transfer_client,
+            collection_id=self.destination_collection_id,
+            item_list_filename=self.delete_item_list_filename,
+            label="Unit_Test_Delete",
+        )
+        self.task_id = deletion_response.get(key="task_id")
+        self.task_info = transfers.transfer_methods._get_task(
+            current_transfer_client=self.transfer_client, task_id=self.task_id
+        )
+        while (
+            self.task_info.get(key="status") != "SUCCEEDED"
+            and self.task_info.get(key="status") != "FAILED"
+        ):
+            time.sleep(self.wait_period_for_transfers)
+            self.task_info = transfers.transfer_methods._get_task(
+                current_transfer_client=self.transfer_client, task_id=self.task_id
+            )
+        self.assertTrue(self.task_info.get(key="status") == "SUCCEEDED")
+
+    def test_submit_delete_using_solely_monitored_collection_names(self):
+        logger.info(
+            "Start test submit delete using solely monitored collection names..."
+        )
+
+        transfers.transfer_methods._complete_transfer(
+            current_transfer_client=self.transfer_client,
+            source_collection_name=self.source_collection_name,
+            destination_collection_name=self.destination_collection_name,
+            item_list_filename=self.transfer_item_list_filename,
+            label="Unit_Test_Transfer",
+            sync_level=MISSING,
+        )
+        deletion_response = transfers.transfer_methods._submit_delete(
+            current_transfer_client=self.transfer_client,
+            collection_name=self.destination_collection_name,
+            item_list_filename=self.delete_item_list_filename,
+            label="Unit_Test_Delete",
+        )
+        self.task_id = deletion_response.get(key="task_id")
         self.task_info = transfers.transfer_methods._get_task(
             current_transfer_client=self.transfer_client, task_id=self.task_id
         )
@@ -293,9 +454,9 @@ class TestTransfers(unittest.TestCase):
                 current_transfer_client=None,
                 source_collection_id=self.source_collection_id,
                 destination_collection_id=self.destination_collection_id,
-                item_list_filename=self.item_list_filename,
+                item_list_filename=self.transfer_item_list_filename,
                 label="Unit_Test_Transfer",
-                sync_level=None,
+                sync_level=MISSING,
             )
 
     def test_complete_transfer_incorrect_source_collection_id(self):
@@ -306,9 +467,9 @@ class TestTransfers(unittest.TestCase):
                 current_transfer_client=self.transfer_client,
                 source_collection_id=None,
                 destination_collection_id=self.destination_collection_id,
-                item_list_filename=self.item_list_filename,
+                item_list_filename=self.transfer_item_list_filename,
                 label="Unit_Test_Transfer",
-                sync_level=None,
+                sync_level=MISSING,
             )
 
     def test_complete_transfer_incorrect_source_collection_name(self):
@@ -319,9 +480,9 @@ class TestTransfers(unittest.TestCase):
                 current_transfer_client=self.transfer_client,
                 source_collection_name=None,
                 destination_collection_name=self.destination_collection_name,
-                item_list_filename=self.item_list_filename,
+                item_list_filename=self.transfer_item_list_filename,
                 label="Unit_Test_Transfer",
-                sync_level=None,
+                sync_level=MISSING,
             )
 
     def test_complete_transfer_incorrect_destination_collection_id(self):
@@ -334,12 +495,12 @@ class TestTransfers(unittest.TestCase):
                 current_transfer_client=self.transfer_client,
                 source_collection_id=self.source_collection_id,
                 destination_collection_id=None,
-                item_list_filename=self.item_list_filename,
+                item_list_filename=self.transfer_item_list_filename,
                 label="Unit_Test_Transfer",
-                sync_level=None,
+                sync_level=MISSING,
             )
 
-    def test_complete_incorrect_destination_collection_name(self):
+    def test_complete_transfer_incorrect_destination_collection_name(self):
         logger.info(
             "Start test complete transfer incorrect destination collection name..."
         )
@@ -349,9 +510,9 @@ class TestTransfers(unittest.TestCase):
                 current_transfer_client=self.transfer_client,
                 source_collection_name=self.source_collection_name,
                 destination_collection_name=None,
-                item_list_filename=self.item_list_filename,
+                item_list_filename=self.transfer_item_list_filename,
                 label="Unit_Test_Transfer",
-                sync_level=None,
+                sync_level=MISSING,
             )
 
     def test_complete_transfer_incorrect_item_list_filename(self):
@@ -364,7 +525,51 @@ class TestTransfers(unittest.TestCase):
                 destination_collection_id=self.destination_collection_id,
                 item_list_filename="None",
                 label="Unit_Test_Transfer",
-                sync_level=None,
+                sync_level=MISSING,
+            )
+
+    def test_complete_transfer_incorrect_filter_rule_list_filename(self):
+        logger.info(
+            "Start test complete transfer incorrect filter rule list filename..."
+        )
+
+        with self.assertRaises(Exception):
+            transfers.transfer_methods._complete_transfer(
+                current_transfer_client=self.transfer_client,
+                source_collection_id=self.source_collection_id,
+                destination_collection_id=self.destination_collection_id,
+                item_list_filename=self.transfer_item_list_filename,
+                filter_rule_list_filename="None",
+                label="Unit_Test_Transfer",
+                sync_level=MISSING,
+            )
+
+    def test_complete_transfer_incorrect_method_in_filter_rule(self):
+        logger.info("Start test complete transfer incorrect method in filter rule...")
+
+        with self.assertRaises(ValueError):
+            transfers.transfer_methods._complete_transfer(
+                current_transfer_client=self.transfer_client,
+                source_collection_id=self.source_collection_id,
+                destination_collection_id=self.destination_collection_id,
+                item_list_filename=self.transfer_item_list_filename,
+                filter_rule_list_filename=self.filter_rule_list_filename_incorrect_method,
+                label="Unit_Test_Transfer",
+                sync_level=MISSING,
+            )
+
+    def test_complete_transfer_incorrect_type_in_filter_rule(self):
+        logger.info("Start test complete transfer incorrect method in filter rule...")
+
+        with self.assertRaises(ValueError):
+            transfers.transfer_methods._complete_transfer(
+                current_transfer_client=self.transfer_client,
+                source_collection_id=self.source_collection_id,
+                destination_collection_id=self.destination_collection_id,
+                item_list_filename=self.transfer_item_list_filename,
+                filter_rule_list_filename=self.filter_rule_list_filename_incorrect_type,
+                label="Unit_Test_Transfer",
+                sync_level=MISSING,
             )
 
     def test_complete_transfer_incorrect_sync_level(self):
@@ -375,7 +580,7 @@ class TestTransfers(unittest.TestCase):
                 current_transfer_client=self.transfer_client,
                 source_collection_id=self.source_collection_id,
                 destination_collection_id=self.destination_collection_id,
-                item_list_filename=self.item_list_filename,
+                item_list_filename=self.transfer_item_list_filename,
                 label="Unit_Test_Transfer",
                 sync_level=4,
             )
@@ -390,9 +595,9 @@ class TestTransfers(unittest.TestCase):
                 current_transfer_client=self.transfer_client,
                 source_collection_id=self.source_collection_id,
                 destination_collection_id=self.destination_collection_id,
-                item_list_filename=self.item_list_filename,
+                item_list_filename=self.transfer_item_list_filename,
                 label="Unit_Test_Transfer",
-                sync_level=None,
+                sync_level=MISSING,
                 status_change_check_interval="-1",
                 auto_cancel_if_inactive_wait_period="00:00:00",
             )
@@ -407,9 +612,9 @@ class TestTransfers(unittest.TestCase):
                 current_transfer_client=self.transfer_client,
                 source_collection_id=self.source_collection_id,
                 destination_collection_id=self.destination_collection_id,
-                item_list_filename=self.item_list_filename,
+                item_list_filename=self.transfer_item_list_filename,
                 label="Unit_Test_Transfer",
-                sync_level=None,
+                sync_level=MISSING,
                 status_change_check_interval="00:01:00",
                 auto_cancel_if_inactive_wait_period="-1",
             )
@@ -421,9 +626,10 @@ class TestTransfers(unittest.TestCase):
             current_transfer_client=self.transfer_client,
             source_collection_id=self.source_collection_id,
             destination_collection_id=self.destination_collection_id,
-            item_list_filename=self.item_list_filename,
+            item_list_filename=self.transfer_item_list_filename,
+            filter_rule_list_filename=self.filter_rule_list_filename,
             label="Unit_Test_Transfer",
-            sync_level=None,
+            sync_level=MISSING,
             status_change_check_interval="00:01:00",
             auto_cancel_if_inactive_wait_period="00:00:00",
         )
@@ -433,13 +639,280 @@ class TestTransfers(unittest.TestCase):
             "Start test complete transfer using solely monitored collection names..."
         )
 
+        print(f"Source collection name: {self.source_collection_name}")
+        print(f"Destination collection name: {self.destination_collection_name}")
+
         transfers.transfer_methods._complete_transfer(
             current_transfer_client=self.transfer_client,
             source_collection_name=self.source_collection_name,
             destination_collection_name=self.destination_collection_name,
-            item_list_filename=self.item_list_filename,
+            item_list_filename=self.transfer_item_list_filename,
             label="Unit_Test_Transfer",
-            sync_level=None,
+            sync_level=MISSING,
+            status_change_check_interval="00:01:00",
+            auto_cancel_if_inactive_wait_period="00:00:00",
+        )
+
+    def test_complete_transfer_with_output_json_and_yaml(self):
+        logger.info("Start test complete transfer with json and yaml output...")
+
+        transfer_json_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/outputs/completetransferinfo.json"
+        )
+        transfer_yaml_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/outputs/completetransferinfo.yaml"
+        )
+        task_json_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/outputs/completetransfertaskinfo.json"
+        )
+        task_yaml_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/outputs/completetransfertaskinfo.yaml"
+        )
+
+        (
+            transfer_list,
+            event_list,
+            status,
+            url,
+        ) = transfers.transfer_methods.complete_transfer(
+            confidential_client_id=self.confidential_client_id,
+            confidential_client_secret=self.confidential_client_secret,
+            source_collection_id=self.source_collection_id,
+            destination_collection_id=self.destination_collection_id,
+            item_list_filename=self.transfer_item_list_filename,
+            label="Unit_Test_Transfer",
+            sync_level=MISSING,
+            status_change_check_interval="00:01:00",
+            auto_cancel_if_inactive_wait_period="00:00:00",
+            transfer_json=transfer_json_filename,
+            transfer_yaml=transfer_yaml_filename,
+            task_json=task_json_filename,
+            task_yaml=task_yaml_filename,
+        )
+
+        self.assertTrue(os.path.isfile(transfer_json_filename))
+        self.assertTrue(os.path.isfile(transfer_yaml_filename))
+        self.assertTrue(os.path.isfile(task_json_filename))
+        self.assertTrue(os.path.isfile(task_yaml_filename))
+
+        with open(transfer_json_filename) as f:
+            transfer_json_content = json.load(f)
+        with open(transfer_yaml_filename) as f:
+            transfer_yaml_content = yaml.safe_load(f)
+
+        expected_transfer_keys = {
+            "successful_transfers",
+            "base_url",
+            "event_list",
+            "status",
+        }
+        for content in (transfer_json_content, transfer_yaml_content):
+            self.assertEqual(set(content.keys()), expected_transfer_keys)
+            self.assertEqual(content["status"], status)
+            self.assertEqual(content["base_url"], url)
+            self.assertEqual(len(content["successful_transfers"]), len(transfer_list))
+            self.assertEqual(len(content["event_list"]), len(event_list))
+
+        with open(task_json_filename) as f:
+            task_json_content = json.load(f)
+        with open(task_yaml_filename) as f:
+            task_yaml_content = yaml.safe_load(f)
+
+        for content in (task_json_content, task_yaml_content):
+            self.assertIn("task_id", content)
+            self.assertIn("status", content)
+            self.assertTrue(len(content["task_id"]) > 0)
+            self.assertEqual(content["status"], status)
+
+    def test_complete_delete_incorrect_client(self):
+        logger.info("Start test complete delete incorrect transfer client...")
+
+        with self.assertRaises(Exception):
+            transfers.transfer_methods._complete_delete(
+                current_transfer_client=None,
+                collection_id=self.destination_collection_id,
+                item_list_filename=self.delete_item_list_filename,
+                label="Unit_Test_Deleter",
+            )
+
+    def test_complete_delete_incorrect_destination_collection_id(self):
+        logger.info("Start test complete delete incorrect destination collection id...")
+
+        with self.assertRaises(ValueError):
+            transfers.transfer_methods._complete_delete(
+                current_transfer_client=self.transfer_client,
+                collection_id=None,
+                item_list_filename=self.delete_item_list_filename,
+                label="Unit_Test_Delete",
+            )
+
+    def test_complete_delete_incorrect_destination_collection_name(self):
+        logger.info(
+            "Start test complete delete incorrect destination collection name..."
+        )
+
+        with self.assertRaises(ValueError):
+            transfers.transfer_methods._complete_delete(
+                current_transfer_client=self.transfer_client,
+                collection_name=None,
+                item_list_filename=self.delete_item_list_filename,
+                label="Unit_Test_Delete",
+            )
+
+    def test_complete_delete_incorrect_item_list_filename(self):
+        logger.info("Start test complete delete incorrect item list filename...")
+
+        with self.assertRaises(Exception):
+            transfers.transfer_methods._complete_delete(
+                current_transfer_client=self.transfer_client,
+                collection_id=self.destination_collection_id,
+                item_list_filename="None",
+                label="Unit_Test_Delete",
+            )
+
+    def test_complete_delete_incorrect_status_change_check_interval(self):
+        logger.info(
+            "Start test complete delete incorrect status change check interval..."
+        )
+
+        with self.assertRaises(ValueError):
+            transfers.transfer_methods._complete_delete(
+                current_transfer_client=self.transfer_client,
+                collection_id=self.destination_collection_id,
+                item_list_filename=self.delete_item_list_filename,
+                label="Unit_Test_Delete",
+                status_change_check_interval="-1",
+                auto_cancel_if_inactive_wait_period="00:00:00",
+            )
+
+    def test_complete_delete_incorrect_auto_cancel_if_inactive_wait_period(self):
+        logger.info(
+            "Start test complete delete incorrect auto cancel if inactive wait period..."
+        )
+
+        with self.assertRaises(ValueError):
+            transfers.transfer_methods._complete_delete(
+                current_transfer_client=self.transfer_client,
+                collection_id=self.destination_collection_id,
+                item_list_filename=self.delete_item_list_filename,
+                label="Unit_Test_Delete",
+                status_change_check_interval="00:01:00",
+                auto_cancel_if_inactive_wait_period="-1",
+            )
+
+    def test_complete_delete(self):
+        logger.info("Start test complete delete...")
+
+        transfers.transfer_methods._complete_transfer(
+            current_transfer_client=self.transfer_client,
+            source_collection_id=self.source_collection_id,
+            destination_collection_id=self.destination_collection_id,
+            item_list_filename=self.transfer_item_list_filename,
+            label="Unit_Test_Transfer",
+            sync_level=MISSING,
+            status_change_check_interval="00:01:00",
+            auto_cancel_if_inactive_wait_period="00:00:00",
+        )
+        transfers.transfer_methods._complete_delete(
+            current_transfer_client=self.transfer_client,
+            collection_id=self.destination_collection_id,
+            item_list_filename=self.delete_item_list_filename,
+            label="Unit_Test_Delete",
+            status_change_check_interval="00:01:00",
+            auto_cancel_if_inactive_wait_period="00:00:00",
+        )
+
+    def test_complete_delete_with_output_json_and_yaml(self):
+        logger.info("Start test complete delete with json and yaml output...")
+
+        transfers.transfer_methods._complete_transfer(
+            current_transfer_client=self.transfer_client,
+            source_collection_id=self.source_collection_id,
+            destination_collection_id=self.destination_collection_id,
+            item_list_filename=self.transfer_item_list_filename,
+            label="Unit_Test_Transfer",
+            sync_level=MISSING,
+            status_change_check_interval="00:01:00",
+            auto_cancel_if_inactive_wait_period="00:00:00",
+        )
+
+        delete_json_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/outputs/completedeleteinfo.json"
+        )
+        delete_yaml_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/outputs/completedeleteinfo.yaml"
+        )
+        task_json_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/outputs/completedeletetaskinfo.json"
+        )
+        task_yaml_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/outputs/completedeletetaskinfo.yaml"
+        )
+
+        deletion_list, event_list, status = transfers.transfer_methods.complete_delete(
+            confidential_client_id=self.confidential_client_id,
+            confidential_client_secret=self.confidential_client_secret,
+            collection_id=self.destination_collection_id,
+            item_list_filename=self.delete_item_list_filename,
+            label="Unit_Test_Delete",
+            status_change_check_interval="00:01:00",
+            auto_cancel_if_inactive_wait_period="00:00:00",
+            delete_json=delete_json_filename,
+            delete_yaml=delete_yaml_filename,
+            task_json=task_json_filename,
+            task_yaml=task_yaml_filename,
+        )
+
+        self.assertTrue(os.path.isfile(delete_json_filename))
+        self.assertTrue(os.path.isfile(delete_yaml_filename))
+        self.assertTrue(os.path.isfile(task_json_filename))
+        self.assertTrue(os.path.isfile(task_yaml_filename))
+
+        with open(delete_json_filename) as f:
+            delete_json_content = json.load(f)
+        with open(delete_yaml_filename) as f:
+            delete_yaml_content = yaml.safe_load(f)
+
+        expected_delete_keys = {"successful_deletions", "event_list", "status"}
+        for content in (delete_json_content, delete_yaml_content):
+            self.assertEqual(set(content.keys()), expected_delete_keys)
+            self.assertEqual(content["status"], status)
+            self.assertEqual(len(content["successful_deletions"]), len(deletion_list))
+            self.assertEqual(len(content["event_list"]), len(event_list))
+
+        with open(task_json_filename) as f:
+            task_json_content = json.load(f)
+        with open(task_yaml_filename) as f:
+            task_yaml_content = yaml.safe_load(f)
+
+        for content in (task_json_content, task_yaml_content):
+            self.assertIn("task_id", content)
+            self.assertIn("status", content)
+            self.assertTrue(len(content["task_id"]) > 0)
+            self.assertEqual(content["status"], status)
+
+    def test_complete_delete_using_solely_monitored_collection_names(self):
+        logger.info(
+            "Start test complete delete using solely monitored collection names..."
+        )
+
+        print(f"Collection name: {self.destination_collection_name}")
+
+        transfers.transfer_methods._complete_transfer(
+            current_transfer_client=self.transfer_client,
+            source_collection_name=self.source_collection_name,
+            destination_collection_name=self.destination_collection_name,
+            item_list_filename=self.transfer_item_list_filename,
+            label="Unit_Test_Transfer",
+            sync_level=MISSING,
+            status_change_check_interval="00:01:00",
+            auto_cancel_if_inactive_wait_period="00:00:00",
+        )
+        transfers.transfer_methods._complete_delete(
+            current_transfer_client=self.transfer_client,
+            collection_name=self.destination_collection_name,
+            item_list_filename=self.delete_item_list_filename,
+            label="Unit_Test_Delete",
             status_change_check_interval="00:01:00",
             auto_cancel_if_inactive_wait_period="00:00:00",
         )
@@ -489,9 +962,9 @@ class TestTransfers(unittest.TestCase):
             current_transfer_client=self.transfer_client,
             source_collection_id=self.source_collection_id,
             destination_collection_id=self.destination_collection_id,
-            item_list_filename=self.item_list_filename,
+            item_list_filename=self.transfer_item_list_filename,
             label="Unit_Test_Transfer",
-            sync_level=None,
+            sync_level=MISSING,
         )
         self.task_id = transfer_response.get(key="task_id")
         transfers.transfer_methods._cancel_tasks(
@@ -1864,3 +2337,99 @@ class TestACLRules(unittest.TestCase):
         collections.guest._delete_guest_collection(
             cls.gcs_client, cls.guest_collection_name
         )
+
+
+class TestURL(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.confidential_client_id = os.environ["GLOBUSAPI_CONFIDENTIAL_CLIENT_ID"]
+        cls.confidential_client_secret = os.environ[
+            "GLOBUSAPI_CONFIDENTIAL_CLIENT_SECRET"
+        ]
+        cls.collection_id = os.environ["GLOBUSAPI_SOURCE_COLLECTION_ID"]
+        cls.collection_name = os.environ["GLOBUSAPI_SOURCE_COLLECTION_NAME"]
+
+        item_list_filename = (
+            "/usr/local/GlobusAPI/tests/GlobusAPI/data/transfer_list.json"
+        )
+        try:
+            if item_list_filename[-5:] == ".json" or item_list_filename[-5:] == ".JSON":
+                cls.item_list = json.load(open(item_list_filename))
+            else:
+                cls.item_list = yaml.safe_load(open(item_list_filename))
+
+        except Exception as ex:
+            logger.exception(
+                "Failed to load the list of items to be submitted for transfer...",
+                exc_info=ex,
+            )
+            raise ex
+
+        cls.non_existing_collection_name = os.environ[
+            "GLOBUSAPI_NON_EXISTING_COLLECTION_NAME"
+        ]
+
+        cls.transfer_client = transfers.transfer_client.transfer_client(
+            cls.confidential_client_id,
+            cls.confidential_client_secret,
+            TransferScopes.all,
+        )
+
+    def test_get_url(self):
+        logger.info("Start test get url smoke test...")
+
+        url1 = transfers.url_methods._get_url(
+            current_transfer_client=self.transfer_client,
+            collection_id=self.collection_id,
+            path=self.item_list[0]["source_path"],
+        )
+        self.assertTrue(validators.url(url1))
+
+        url2 = transfers.url_methods._get_url(
+            current_transfer_client=self.transfer_client,
+            collection_name=self.collection_name,
+            path=self.item_list[0]["source_path"],
+        )
+        self.assertTrue(validators.url(url2))
+
+        self.assertEqual(url1, url2)
+
+    def test_get_url_incorrect_transfer_client(self):
+        logger.info("Start test get url incorrect task_id...")
+
+        with self.assertRaises(Exception):
+            transfers.url_methods._get_url(
+                current_transfer_client=None,
+                collection_id=self.collection_id,
+                path=self.item_list[0]["source_path"],
+            )
+
+    def test_get_url_incorrect_collection_id(self):
+        logger.info("Start test get url incorrect collection_id...")
+
+        with self.assertRaises(Exception):
+            transfers.url_methods._get_url(
+                current_transfer_client=self.transfer_client,
+                collection_id=None,
+                path=self.item_list[0]["source_path"],
+            )
+
+    def test_get_url_incorrect_collection_name(self):
+        logger.info("Start test get url incorrect collection_name...")
+
+        with self.assertRaises(Exception):
+            transfers.url_methods._get_url(
+                current_transfer_client=self.transfer_client,
+                collection_name=self.non_existing_collection_name,
+                path=self.item_list[0]["source_path"],
+            )
+
+    def test_get_url_incorrect_path(self):
+        logger.info("Start test get url incorrect path...")
+
+        with self.assertRaises(Exception):
+            transfers.url_methods._get_url(
+                current_transfer_client=self.transfer_client,
+                collection_id=self.collection_id,
+                path="None",
+            )

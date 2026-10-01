@@ -37,16 +37,27 @@ from .cli.groups import (
     removegroupmembers,
     setgroupmembers,
 )
+from .cli.timers import (
+    createtimer,
+    deletetimer,
+    gettimer,
+    listtimers,
+    pausetimer,
+    resumetimer,
+)
 from .cli.transfers import (
     aclrulelist,
     addaclrule,
     canceltasks,
+    completedelete,
     completetransfer,
     deleteaclrule,
     getaclrule,
     getmonitoredcollection,
     gettask,
+    geturl,
     monitoredcollectionlist,
+    submitdelete,
     submittransfer,
     successfultransfers,
     taskeventlist,
@@ -85,7 +96,9 @@ if __name__ == "__main__":
     # Transfer commands
     cli.add_command(successfultransfers)
     cli.add_command(submittransfer)
+    cli.add_command(submitdelete)
     cli.add_command(completetransfer)
+    cli.add_command(completedelete)
     cli.add_command(canceltasks)
     cli.add_command(gettask)
     cli.add_command(tasklist)
@@ -98,6 +111,8 @@ if __name__ == "__main__":
     cli.add_command(addaclrule)
     cli.add_command(deleteaclrule)
     cli.add_command(updateaclrule)
+    # URL commands
+    cli.add_command(geturl)
     # Group commands
     cli.add_command(creategroup)
     cli.add_command(deletegroup)
@@ -118,6 +133,14 @@ if __name__ == "__main__":
     cli.add_command(deleterole)
     cli.add_command(getrole)
     cli.add_command(rolelist)
+
+    # Timer commands
+    cli.add_command(listtimers)
+    cli.add_command(gettimer)
+    cli.add_command(createtimer)
+    cli.add_command(deletetimer)
+    cli.add_command(pausetimer)
+    cli.add_command(resumetimer)
     try:
         cli(auto_envvar_prefix="GLOBUSAPI")
     except Exception as ex:

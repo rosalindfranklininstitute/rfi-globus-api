@@ -960,8 +960,8 @@ def _delete_acl_rule(
     )
 
     if len(check_rule) == 0:
-        logger.error("Error: ACL rule does not exists.")
-        raise ValueError("Error: ACL rule does not exists.")
+        logger.error("Error: ACL rule does not exist.")
+        raise ValueError("Error: ACL rule does not exist.")
     elif len(check_rule) > 1:
         logger.error(
             f"""Multiple ACL rules found based on this input {check_rule}. Please provide more specific
@@ -1228,8 +1228,8 @@ def _update_acl_rule(
         )
 
         if len(check_rule) == 0:
-            logger.error("Error: ACL rule does not exists.")
-            raise ValueError("Error: ACL rule does not exists.")
+            logger.error("Error: ACL rule does not exist.")
+            raise ValueError("Error: ACL rule does not exist.")
         elif len(check_rule) > 1:
             logger.error(
                 f"""Multiple ACL rules found based on this input {check_rule}. Please provide more specific

@@ -19,6 +19,7 @@ import typing
 from globus_sdk import GCSClient, TransferClient
 from globus_sdk.response import GlobusHTTPResponse
 from globus_sdk.scopes import TransferScopes
+from globus_sdk._missing import MISSING, MissingType
 
 import GlobusAPI
 
@@ -114,22 +115,22 @@ def gcs_client(
 def get_collection_from_name(
     current_gcs_client: GCSClient,
     collection_name: str,
-    filter_to_help: typing.Optional[typing.Union[str, typing.Iterable[str]]] = None,
+    filter_to_help: typing.Union[str, typing.Iterable[str], MissingType] = MISSING,
 ) -> typing.List[GlobusHTTPResponse]:
     """Search a collection based on its name and return all info about it.
 
     Args:
         current_gcs_client (GCSClient, required):  Globus connect server client.
         collection_name (str, required): The name of the collection to search for.
-        filter_to_help (typing.Optional[typing.Union[str, typing.Iterable[str]]], optional): filter by either
-                                                                                             "mapped_collections",
-                                                                                             "guest_collections",
-                                                                                             "managed_by_me",
-                                                                                             "created_by_me".
-                                                                                             or any combination of the
-                                                                                             above added as an iterable
-                                                                                             of strings.
-                                                                                             Defaults to None.
+        filter_to_help (typing.Union[str, typing.Iterable[str], MissingType], optional): filter by either
+                                                                                         "mapped_collections",
+                                                                                         "guest_collections",
+                                                                                         "managed_by_me",
+                                                                                         "created_by_me".
+                                                                                         or any combination of the
+                                                                                         above added as an iterable
+                                                                                         of strings.
+                                                                                         Defaults to MISSING.
 
     Returns:
         typing.List[GlobusHTTPResponse]: dictionary of collection attributes
@@ -155,8 +156,8 @@ def get_collection_from_name(
 def get_collection_list(
     current_gcs_client: GCSClient,
     mapped_collection_id: typing.Optional[str] = None,
-    filter_to_help: typing.Optional[typing.Union[str, typing.Iterable[str]]] = None,
-    include: typing.Optional[typing.Union[str, typing.Iterable[str]]] = None,
+    filter_to_help: typing.Union[str, typing.Iterable[str], MissingType] = MISSING,
+    include: typing.Union[str, typing.Iterable[str], MissingType] = MISSING,
 ) -> typing.List[GlobusHTTPResponse]:
     """Return a list of collections
 
@@ -164,17 +165,17 @@ def get_collection_list(
         current_gcs_client (GCSClient, required): Globus connect server client. Defaults to None.
         mapped_collection_id (str, required): A mapped collection if the search is limited to only the guest collections
                                               of this mapped collection. Defaults to None.
-        filter_to_help (typing.Optional[typing.Union[str, typing.Iterable[str]]], optional): Filter the returned set to
-                                                                                             any combination of the
-                                                                                             following:
-                                                                                             "mapped_collections",
-                                                                                             "guest_collections",
-                                                                                             "managed_by_me",
-                                                                                             "created_by_me".
-                                                                                             Defaults to None.
-        include (typing.Optional[typing.Union[str, typing.Iterable[str]]], optional): Names of additional documents to
-                                                                                      include in the responser.
-                                                                                      Defaults to None.
+        filter_to_help (typing.Union[str, typing.Iterable[str], MissingType], optional): Filter the returned set to
+                                                                                         any combination of the
+                                                                                         following:
+                                                                                         "mapped_collections",
+                                                                                         "guest_collections",
+                                                                                         "managed_by_me",
+                                                                                         "created_by_me".
+                                                                                         Defaults to MISSING.
+        include (typing.Union[str, typing.Iterable[str], MissingType], optional): Names of additional documents to
+                                                                                  include in the responser.
+                                                                                  Defaults to MISSING.
 
     Returns:
         typing.List[GlobusHTTPResponse]: list of guest collections
@@ -208,7 +209,7 @@ def get_collection(
     current_gcs_client: GCSClient,
     collection_name: typing.Optional[str] = None,
     collection_id: typing.Optional[str] = None,
-    filter_to_help: typing.Optional[typing.Union[str, typing.Iterable[str]]] = None,
+    filter_to_help: typing.Union[str, typing.Iterable[str], MissingType] = MISSING,
 ) -> typing.List[GlobusHTTPResponse]:
     """Get info for a specific collection
 
@@ -220,15 +221,15 @@ def get_collection(
         collection_id (typing.Optional[str], optional): The collection id of the collection the role will be added to.
                                                         Either the `collection_name` or the `collection_id` is required.
                                                         Defaults to None.
-        filter_to_help (typing.Optional[typing.Union[str, typing.Iterable[str]]], optional): filter by either
-                                                                                             "mapped_collections",
-                                                                                             "guest_collections",
-                                                                                             "managed_by_me",
-                                                                                             "created_by_me".
-                                                                                             or any combination of the
-                                                                                             above added as an iterable
-                                                                                             of strings.
-                                                                                             Defaults to None.
+        filter_to_help (typing.Union[str, typing.Iterable[str], MissingType], optional): filter by either
+                                                                                         "mapped_collections",
+                                                                                         "guest_collections",
+                                                                                         "managed_by_me",
+                                                                                         "created_by_me".
+                                                                                         or any combination of the
+                                                                                         above added as an iterable
+                                                                                         of strings.
+                                                                                         Defaults to None.
     Returns:
         typing.List[GlobusHTTPResponse]: collection details within a one element list. If no collection is found
                                          it returns an empty list.

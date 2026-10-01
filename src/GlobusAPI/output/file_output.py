@@ -64,7 +64,10 @@ def write_json_output(content: typing.Union[GlobusHTTPResponse, object], filenam
     if type(content) == GlobusHTTPResponse:
         content = content.data
     try:
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        if (not os.path.exists(os.path.dirname(filename))) and (
+            os.path.dirname(filename) != ""
+        ):
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, "w") as fp:
             json.dump(content, fp)
     except Exception as ex:
@@ -86,7 +89,10 @@ def write_yaml_output(content: typing.Union[GlobusHTTPResponse, object], filenam
     if type(content) == GlobusHTTPResponse:
         content = content.data
     try:
-        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        if (not os.path.exists(os.path.dirname(filename))) and (
+            os.path.dirname(filename) != ""
+        ):
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, "w") as fp:
             yaml.dump(content, fp)
     except Exception as ex:

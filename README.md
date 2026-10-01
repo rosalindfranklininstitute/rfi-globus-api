@@ -38,15 +38,22 @@ Commands:
   deletegroup
 
 # Transfer Commands
-  successfultransfers
   completetransfer
   submittransfer
+  
+# Delete Commands
+  completedelete
+  submitdelete
+
+# Task Commands
   canceltasks
+  successfultransfers
   gettask
   tasklist
   taskeventlist
   monitoredcollectionlist
   getmonitoredcollection
+  geturl
 
 # ACL Rule - Permissions Commands
   aclrulelist
@@ -54,6 +61,14 @@ Commands:
   addaclrule
   deleteaclrule
   updateaclrule
+
+# Timer Commands
+  listtimers
+  gettimer
+  createtimer
+  deletetimer
+  pausetimer
+  resumetimer
 
 Args:
   -v, --verbose                        Verbose output. Use multiple times for more
